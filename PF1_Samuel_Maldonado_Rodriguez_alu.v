@@ -91,7 +91,7 @@ module Shifter_SignExtender (
             PASS_RM:        N = Rm;
             ZERO_EXTEND:    N = {20'b0, I[11:0]};                 
             SHIFT_RM: begin                                       // Shift Rm by I[11:7] positions with different shift types based on I[6:5]
-                case (I[6:5]) //This is AM
+                case (I[6:5])
                     LSL: N = Rm << I[11:7];   
                     LSR: N = Rm >> I[11:7];   
                     ASR: N = $signed(Rm) >>> I[11:7]; // >>> Triple arrow means arithmetic shift. In a signed rotate, the MSB is copied on the left of the resulting shift
