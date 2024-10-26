@@ -6,7 +6,7 @@ module control_unit (
     output reg branch_link,    // 1 for Branch & Link (BL), 0 for Branch (B)
     output reg s_bit,          // S bit for updating the PSR (Program Status Register)
     output reg rw,             // Read/Write signal: 1 for read (load), 0 for write (store)
-    output reg size,           // Size: 1 for byte, 0 for word
+    output reg size,           // Size: 0 for byte, 1 for word
     output reg datamem_en // Data memory enable for load/store
 );
 
@@ -60,8 +60,6 @@ module control_unit (
                 end else begin
                     if (bit4 == 0) begin
                         AM = SHIFT_RM; //Normal immediate shift Rm by an Immediate
-                    end else begin 
-                        AM = SHIFT_RM; //The one with Rs and bit7 = 0, need some additional logic that idk how to handle
                     end
                 end
             
