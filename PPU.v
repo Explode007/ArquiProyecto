@@ -120,6 +120,7 @@ module PPU();
         .datamem_en_in(datamem_en_cu_out),
 
         //OUTPUTS
+        .am_out(am_out_cumux),
         .rf_en_out(rf_en_out_cumux),
         .alu_op_out(alu_op_out_cumux),
         .Load_out(Load_out_cumux),
@@ -147,14 +148,14 @@ module PPU();
         .reset(rst),
 
         //INPUTS
-        .am(am_out),
-        .alu_op(alu_op_out),
-        .rf_en(rf_en_out),
-        .s(s_out),
-        .datamem_en(datamem_en_out),
-        .readwrite(readwrite_out),
-        .size(size_out),
-        .load_instruction(load_instruction_out),
+        .am(am_out_cumux),
+        .alu_op(alu_op_out_cumux),
+        .rf_en(rf_en_out_cumux),
+        .s(s_bit_out_cumux),
+        .datamem_en(datamem_en_out_cumux),
+        .readwrite(rw_out_cumux),
+        .size(size_out_cumux),
+        .load_instruction(Load_out_cumux),
 
         //OUTPUTS
         .am_out(am_out_idexe),
@@ -198,49 +199,83 @@ module PPU();
     );
 
     //Simulation stuff here!
-    initial begin
-        // Open and read the test code file
-        fi = $fopen("testcode_Fase_III(2).txt", "r");
-        Address = 9'b000000000;
-        while (!$feof(fi)) begin
-            code = $fscanf(fi, "%b", data);  // Read binary instructions
-            insMem.Mem[Address] = data;      // Load instructions into ROM
-            Address = Address + 1;
-        end
-        $fclose(fi);  // Close the file
-
-        // Initialize the signals
-        LE = 1'b1;
-        clk = 0;
-        rst = 1'b1;
-        s = 1'b0;
-
-        // Generate clock signal, toggles every 2 time units
-        forever #2 clk = ~clk;
-
-        // Release reset at time 3
-        #3 rst = 1'b0;
-
-        // Change the mux control signal at time 32
-        #32 s = 1'b1;
-
-        // Monitor outputs at each clock cycle
-        $display("Time\tPC\tAM\tS_bit\tDATAMEM-EN\tR/W\tSIZE\tRF_EN\tALU_OP\tLOAD\tBRANCH_LINK");
-        $monitor("%0t\t%d\t%b\t%b\t%b\t%b\t%b\t%b\t%b\t%b\t%b",
-                $time, 
-                PC_Out,  // Print PC in decimal
-                AM, 
-                s_bit, 
-                datamem_en, 
-                rw, 
-                size, 
-                rf_en, 
-                alu_op, 
-                Load, 
-                branch_link
-        );
-
-        // End the simulation at time 40
-        #40 $finish;
+initial begin
+    // Open and read the test code file
+    fi = $fopen("testcode_Fase_III(2).txt", "r");
+    Address = 9'b000000000;
+    while (!$feof(fi)) begin
+        code = $fscanf(fi, "%b", data);  // Read binary instructions
+        insMem.Mem[Address] = data;      // Load instructions into ROM
+        Address = Address + 1;
     end
+    $fclose(fi);  // Close the file
+
+    // Initialize the signals
+    LE = 1'b1;
+    clk = 0;
+    rst = 1'b1;
+    s = 1'b0;
+
+    // Release reset at time 3
+    #3 rst = 1'b0;
+
+    // Change the mux control signal at time 32
+    #32 s = 1'b1;
+
+    // End the simulation at time 40
+    #40 $finish;
+end
+
+// Generate clock signal, toggles every 2 time units
+always begin
+    #2 clk = ~clk;
+end
+
+// Monitoring at every positive clock edge
+always @(posedge clk) begin
+    // First line: Instruction keyword, PC in decimal, and CU output signals in binary
+    $display("%0t\tInstruction = %h\tPC = %d\t%b\t%b\t%b\t%b\t%b\t%b\t%b\t%b\t%b", 
+            $time, 
+            cu_in,              // Instruction arriving at CU (can use keyword from instruction)
+            PC_Out,             // Program Counter (decimal)
+            am_cu_out,          // AM from CU
+            s_bit_cu_out,       // S_bit from CU
+            datamem_en_cu_out,  // DATAMEM_EN from CU
+            rw_cu_out,          // Read/Write signal from CU
+            size_cu_out,        // Size (byte/word) from CU
+            rf_en_cu_out,       // RF_EN from CU
+            alu_op_cu_out,      // ALU_OP from CU
+            Load_cu_out,        // Load signal from CU
+            branch_link_cu_out  // Branch Link signal from CU
+    );
+
+    // Second line: Control signals at EX stage
+    $display("EX_STAGE: AM = %b\tS_bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLOAD = %b\tBRANCH_LINK = %b", 
+            am_out_idexe, 
+            s_bit_out_idexe, 
+            datamem_en_out_idexe, 
+            rw_out_idexe, 
+            size_out_idexe, 
+            rf_en_out_idexe, 
+            alu_op_out_idexe, 
+            Load_out_idexe, 
+            branch_link_out_cumux
+    );
+
+    // Third line: Control signals at MEM stage
+    $display("MEM_STAGE: RF_EN = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tLOAD = %b", 
+            rf_en_out_exemem, 
+            datamem_en_out_exemem, 
+            rw_out_exemem, 
+            size_out_exemem, 
+            Load_out_exemem
+    );
+
+    // Fourth line: Control signals at WB stage
+    $display("WB_STAGE: RF_EN = %b", 
+            rf_en_out_memwb
+    );
+end
+
+
 endmodule
