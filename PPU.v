@@ -60,7 +60,6 @@ wire size_out;
 wire datamem_en_out;
 
 //Instantiations here!
-
 PC PCReg(
     .E(LE), 
     .Reset(rst), 
@@ -101,6 +100,7 @@ cuMux Mux(
     .rw_in(rw),
     .size_in(size),
     .datamem_en_in(datamem_en),
+
     .rf_en_out(rf_en_out),
     .alu_op_out(alu_op_out),
     .Load_out(Load_out),
@@ -207,37 +207,16 @@ initial begin
         Address = Address + 1;
     end
     $fclose(fi);
-end
-
-initial begin
+    
     LE = 1'b1;
-end
-
-initial begin
     clk = 0;
     forever #2 clk = ~clk;
-end
-
-initial begin
     rst = 1'b1;
     #3 rst = 1'b0;
-end
 
-initial begin
-    rst = 1'b1;
-    #3 rst = 1'b0;
-end
-
-initial begin
     s = 1'b0;
     #32 s = 1'b1;
-end
 
-initial begin
-    #40 $finish;
-end
-
-initial begin
     $monitor("Time: %0t", 
     $time
     );
