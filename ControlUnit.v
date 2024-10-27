@@ -7,7 +7,8 @@ module control_unit (
     output reg s_bit,          // S bit for updating the PSR (Program Status Register)
     output reg rw,             // Read/Write signal: 1 for read (load), 0 for write (store)
     output reg size,           // Size: 0 for byte, 1 for word
-    output reg datamem_en // Data memory enable for load/store
+    output reg datamem_en, // Data memory enable for load/store
+    output reg [1:0] AM
 );
 
     parameter OP_ADD  = 4'b0000;
