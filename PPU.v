@@ -3,15 +3,13 @@
 `include "cuMux.v"
 `include "PC.v"
 `include "rom.v"
-`include "pipeline_registers.v"
+`include "fase3pipereg.v"
 
 module PPU();
 
 reg rst;
 reg clk;
 reg s;
-
-
 //Wires & More!
 
 //Preload
@@ -29,13 +27,6 @@ wire [31:0] Adder_Out;
 wire [31:0] insMem_Out;
 
 //IF-ID Reg Wires
-reg [31:0] next_PC;
-wire [3:0] instruction_condition;
-wire [23:0] branch_offset;
-wire [31:0] next_pc_out;
-wire [3:0] ra;
-wire [3:0] rd;
-wire [3:0] rb;
 wire [11:0] imm_in;
 wire [31:0] cu_in;
 
@@ -115,29 +106,16 @@ if_id_reg IF_ID(
     .clk(clk),
     .load_enable(LE),
     .reset(rst),
+
     .instruction(PC_Out),
-    .next_pc(next_PC),
-    .instruction_condition(instruction_condition),
-    .branch_offset(branch_offset),
-    .next_pc_out(next_pc_out),
-    .ra(ra),
-    .rd(rd),
-    .rb(rb),
-    .imm_in(imm_in),
+    
     .cu_in(cu_in)
 );
 
 id_exe_reg ID_EXE(
     .clk(clk), 
     .reset(rst),
-    .mux_control,
-    .instruction_condition(instruction_condition),
-    .next_pc(next_pc_out),
-    .operand_a,
-    .operand_b,
-    .operand_d,
-    .rd,
-    .imm_in,
+
     .am,
     .alu_op,
     .rf_en,
@@ -146,14 +124,7 @@ id_exe_reg ID_EXE(
     .readwrite,
     .size,
     .load_instruction,
-    .mux_control_out,
-    .instruction_condition_out,
-    .next_pc_out,
-    .operand_a_out,
-    .operand_b_out,
-    .operand_d_out,
-    .rd_out,
-    .imm_in_out,
+
     .am_out,
     .alu_op_out,
     .rf_en_out,
@@ -167,17 +138,13 @@ id_exe_reg ID_EXE(
 exe_mem_reg EXE_MEM(
     .clk(clk),
     .reset(rst),
-    .alu_or_nextpc,
-    .data_in,
-    .rd,
+
     .rf_en,
     .datamem_en,
     .readwrite,
     .size,
     .load_instruction,
-    .alu_or_nextpc_out,
-    .data_in_out,
-    .rd_out,
+    
     .rf_en_out,
     .datamem_en_out,
     .readwrite_out,
@@ -188,11 +155,9 @@ exe_mem_reg EXE_MEM(
 mem_wb_reg MEM_WB(
     .clk(clk),
     .reset(rst),
-    .rd,
-    .data,
+
     .rf_en,
-    .rd_out,
-    .data_out,
+    
     .rf_en_out
 );
 
