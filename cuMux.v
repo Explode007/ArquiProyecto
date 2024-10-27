@@ -1,5 +1,7 @@
 module cuMux (
     input s,
+
+    input am_in,
     input rf_en_in,          
     input [3:0] alu_op_in,   
     input Load_in,            
@@ -8,6 +10,7 @@ module cuMux (
     input rw_in,             
     input size_in,           
     input datamem_en_in,
+
     output reg rf_en_out,          
     output reg [3:0] alu_op_out,   
     output reg Load_out,            
@@ -20,6 +23,7 @@ module cuMux (
 
     always @* begin
         if(s == 1'b0) begin // Pass Control Unit values when selector is 0
+            am_in <= am_in;
             rf_en_out <= rf_en_in;
             alu_op_out <= alu_op_in;
             Load_out <= Load_in;
@@ -30,6 +34,7 @@ module cuMux (
             datamem_en_out <= datamem_en_in;
         end 
         else begin
+            am_in <= 2'b0;
             rf_en_out <= 1'b0;
             alu_op_out <= 1'b0;
             Load_out <= 1'b0;

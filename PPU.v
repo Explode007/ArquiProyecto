@@ -29,26 +29,26 @@ module PPU();
     wire [31:0] cu_in;
 
     //Control Unit Wires to MUX
-    wire [1:0] am;
-    wire rf_en;
-    wire [3:0] alu_op;
-    wire Load;
-    wire branch_link;
-    wire s_bit;
-    wire rw;
-    wire size;
-    wire datamem_en;
+    wire [1:0] am_cu_out;
+    wire rf_en_cu_out;
+    wire [3:0] alu_op_cu_out;
+    wire Load_cu_out;
+    wire branch_link_cu_out;
+    wire s_bit_cu_out;
+    wire rw_cu_out;
+    wire size_cu_out;
+    wire datamem_en_cu_out;
 
     //Control Unit Wires OUT of Mux 
-    wire [1:0] am_out;
-    wire rf_en_out;
-    wire [3:0] alu_op_out;
-    wire Load_out;
-    wire branch_link_out;
-    wire s_bit_out;
-    wire rw_out;
-    wire size_out;
-    wire datamem_en_out;
+    wire [1:0] am_out_cumux;
+    wire rf_en_out_cumux;
+    wire [3:0] alu_op_out_cumux;
+    wire Load_out_cumux;
+    wire branch_link_out_cumux;
+    wire s_bit_out_cumux;
+    wire rw_out_cumux;
+    wire size_out_cumux;
+    wire datamem_en_out_cumux;
 
     //ID_EXE OUT
     wire [1:0] am_out_idexe;
@@ -94,37 +94,40 @@ module PPU();
         .instruction(cu_in),
 
         //OUTPUTS
-        .rf_en(rf_en),
-        .alu_op(alu_op),
-        .Load(Load),
-        .branch_link(branch_link),
-        .s_bit(s_bit),
-        .rw(rw),
-        .size(size),
-        .datamem_en(datamem_en)
+        .AM(am_cu_out),
+        .rf_en(rf_en_cu_out),
+        .alu_op(alu_op_cu_out),
+        .Load(Load_cu_out),
+        .branch_link(branch_link_cu_out),
+        .s_bit(s_bit_cu_out),
+        .rw(rw_cu_out),
+        .size(size_cu_out),
+        .datamem_en(datamem_en_cu_out)
     );
 
     cuMux Mux(
-        //INPUTS
         .s(s),
-        .rf_en_in(rf_en),
-        .alu_op_in(alu_op),
-        .Load_in(Load),
-        .branch_link_in(branch_link),
-        .s_bit_in(s_bit),
-        .rw_in(rw),
-        .size_in(size),
-        .datamem_en_in(datamem_en),
+        
+        //INPUTS
+        .am_in(am_cu_out),
+        .rf_en_in(rf_en_cu_out),
+        .alu_op_in(alu_op_cu_out),
+        .Load_in(Load_cu_out),
+        .branch_link_in(branch_link_cu_out),
+        .s_bit_in(s_bit_cu_out),
+        .rw_in(rw_cu_out),
+        .size_in(size_cu_out),
+        .datamem_en_in(datamem_en_cu_out),
 
         //OUTPUTS
-        .rf_en_out(rf_en_out),
-        .alu_op_out(alu_op_out),
-        .Load_out(Load_out),
-        .branch_link_out(branch_link_out),
-        .s_bit_out(s_bit_out),
-        .rw_out(rw_out),
-        .size_out(size_out),
-        .datamem_en_out(datamem_en_out)
+        .rf_en_out(rf_en_out_cumux),
+        .alu_op_out(alu_op_out_cumux),
+        .Load_out(Load_out_cumux),
+        .branch_link_out(branch_link_out_cumux),
+        .s_bit_out(s_bit_out_cumux),
+        .rw_out(rw_out_cumux),
+        .size_out(size_out_cumux),
+        .datamem_en_out(datamem_en_out_cumux)
     );
 
     if_id_reg IF_ID(
