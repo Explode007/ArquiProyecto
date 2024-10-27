@@ -250,7 +250,7 @@ always @(posedge clk) begin
     );
 
     // Second line: Control signals at EX stage
-    $display("EX_STAGE: AM = %b\tS_bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLOAD = %b\tBRANCH_LINK = %b", 
+    $display("EX_STAGE: AM = %b\tS_bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLOAD = %b", 
             am_out_idexe, 
             s_bit_out_idexe, 
             datamem_en_out_idexe, 
@@ -258,8 +258,7 @@ always @(posedge clk) begin
             size_out_idexe, 
             rf_en_out_idexe, 
             alu_op_out_idexe, 
-            Load_out_idexe, 
-            branch_link_out_cumux
+            Load_out_idexe
     );
 
     // Third line: Control signals at MEM stage
