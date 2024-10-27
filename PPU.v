@@ -5,6 +5,8 @@
 `include "rom.v"
 `include "pipeline_registers.v"
 
+module PPU();
+
 reg rst;
 reg clk;
 reg s;
@@ -67,17 +69,17 @@ PC PCReg(
     .PC_Out(PC_Out)
 );
 
-Adder add(
+adder add(
     .Adder_OUT(Adder_Out),
-    .A(PC_Out)
+    .Adder_IN(PC_Out)
 );
 
 rom insMem(
-    .I(PC_Out),
-    .A(insMem_Out)
+    .I(insMem_Out),
+    .A(PC_Out[7:0])
 );
 
-ControlUnit CU(
+control_unit CU(
     .instruction(cu_in),
     .rf_en(rf_en),
     .alu_op(alu_op),
@@ -129,8 +131,8 @@ id_exe_reg ID_EXE(
     .clk(clk), 
     .reset(rst),
     .mux_control,
-    .instruction_condition,
-    .next_pc,
+    .instruction_condition(instruction_condition),
+    .next_pc(next_pc_out),
     .operand_a,
     .operand_b,
     .operand_d,
@@ -234,3 +236,11 @@ end
 initial begin
     #40 $finish;
 end
+
+initial begin
+    $monitor("Time: %0t", 
+    $time
+    );
+end
+
+endmodule

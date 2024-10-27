@@ -1,5 +1,5 @@
 module cuMux (
-    input s;
+    input s,
     input rf_en_in,          
     input [3:0] alu_op_in,   
     input Load_in,            
