@@ -201,8 +201,8 @@ module PPU();
     //Simulation stuff here!
 initial begin
     // Open and read the test code file
-    fi = $fopen("testcode_Fase_III(2).txt", "r");
-    Address = 9'b000000000;
+    fi = $fopen("precharge.txt", "r");
+    Address = 0;
     while (!$feof(fi)) begin
         code = $fscanf(fi, "%b", data);  // Read binary instructions
         insMem.Mem[Address] = data;      // Load instructions into ROM
