@@ -212,19 +212,20 @@ initial begin
 
     // Initialize the signals
     LE = 1'b1;
-    clk = 0;
-    rst = 1'b1;
-    s = 1'b0;
-
-    // Release reset at time 3
-    #3 rst = 1'b0;
-
-    // Change the mux control signal at time 32
-    #32 s = 1'b1;
 end
 
-always begin
+initial begin
     #41 $finish; //41 so it can print out 40
+end
+
+initial begin
+    rst = 1'b1;
+    #3 rst = 1'b0;
+end
+
+initial begin
+    s = 1'b0;
+    #32 s = 1'b1;
 end
 
 // Generate clock signal, toggles every 2 time units
@@ -233,51 +234,67 @@ always begin
     #2 clk = ~clk;
 end
 
+//reg [63:0] cu_in_name;
+
 // Monitoring at every positive clock edge
 always @(posedge clk) begin
-    // First line: Instruction keyword, PC in decimal, and CU output signals in binary
-    $display("%0t\tInstruction = %h\tPC = %d\tAM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch/Link = %b", 
-            $time, 
-            cu_in,              // Instruction arriving at CU (can use keyword from instruction)
-            PC_Out,             // Program Counter (decimal)
-            am_cu_out,          // AM from CU
-            s_bit_cu_out,       // S_bit from CU
-            datamem_en_cu_out,  // DATAMEM_EN from CU
-            rw_cu_out,          // Read/Write signal from CU
-            size_cu_out,        // Size (byte/word) from CU
-            rf_en_cu_out,       // RF_EN from CU
-            alu_op_cu_out,      // ALU_OP from CU
-            Load_cu_out,        // Load signal from CU
-            branch_link_cu_out  // Branch Link signal from CU
-    );
 
-    // Second line: Control signals at EX stage
-    $display("EX_STAGE: AM = %b\tS_bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLOAD = %b", 
-            am_out_idexe, 
-            s_bit_out_idexe, 
-            datamem_en_out_idexe, 
-            rw_out_idexe, 
-            size_out_idexe, 
-            rf_en_out_idexe, 
-            alu_op_out_idexe, 
-            Load_out_idexe
-    );
+    // case (cu_in)
+    //         32'he2110000: cu_in_name <= "ANDS"; //hardcoded keyword assignment test (following instructions)
+    //         32'he7d12000: cu_in_name <= "LDRB";
+    //         32'h1afffffd: cu_in_name <= "BNE";
+    //         32'he2010000: cu_in_name <= "AND";
+    //         32'h00000000: cu_in_name <= "NOP";
+    //         default: cu_in_name <= "XXXXX";
+    //     endcase
 
-    // Third line: Control signals at MEM stage
-    $display("MEM_STAGE: RF_EN = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tLOAD = %b", 
-            rf_en_out_exemem, 
-            datamem_en_out_exemem, 
-            rw_out_exemem, 
-            size_out_exemem, 
-            Load_out_exemem
-    );
 
-    // Fourth line: Control signals at WB stage
-    $display("WB_STAGE: RF_EN = %b", 
-            rf_en_out_memwb
-    );
+    // // First line: Instruction keyword, PC in decimal, and CU output signals in binary
+    // $display("%0t\tInstruction = %h\tPC = %d\tAM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch/Link = %b", 
+    //         $time, 
+    //         //cu_in_name,         // Instruction arriving at CU (can use keyword from instruction)
+    //         cu_in,
+    //         PC_Out,             // Program Counter (decimal)
+    //         am_cu_out,          // AM from CU
+    //         s_bit_cu_out,       // S_bit from CU
+    //         datamem_en_cu_out,  // DATAMEM_EN from CU
+    //         rw_cu_out,          // Read/Write signal from CU
+    //         size_cu_out,        // Size (byte/word) from CU
+    //         rf_en_cu_out,       // RF_EN from CU
+    //         alu_op_cu_out,      // ALU_OP from CU
+    //         Load_cu_out,        // Load signal from CU
+    //         branch_link_cu_out  // Branch Link signal from CU
+    // );
 
-    $display("\n");
+    // // Second line: Control signals at EX stage
+    // $display("EX_STAGE: AM = %b\tS_bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLOAD = %b", 
+    //         am_out_idexe, 
+    //         s_bit_out_idexe, 
+    //         datamem_en_out_idexe, 
+    //         rw_out_idexe, 
+    //         size_out_idexe, 
+    //         rf_en_out_idexe, 
+    //         alu_op_out_idexe, 
+    //         Load_out_idexe
+    // );
+
+    // // Third line: Control signals at MEM stage
+    // $display("MEM_STAGE: RF_EN = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tLOAD = %b", 
+    //         rf_en_out_exemem, 
+    //         datamem_en_out_exemem, 
+    //         rw_out_exemem, 
+    //         size_out_exemem, 
+    //         Load_out_exemem
+    // );
+
+    // // Fourth line: Control signals at WB stage
+    // $display("WB_STAGE: RF_EN = %b", 
+    //         rf_en_out_memwb
+    // );
+
+    $monitor("Time = %t\tIns. = %h\tPC = %d\tAM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch Link = %b\n", 
+    $time, cu_in, PC_Out, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out
+    );
 end
 
 
