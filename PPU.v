@@ -151,7 +151,7 @@ module PPU();
         .am(am_out_cumux),
         .alu_op(alu_op_out_cumux),
         .rf_en(rf_en_out_cumux),
-        .s(s_bit_out_cumux),
+        .s_bit(s_bit_out_cumux),
         .datamem_en(datamem_en_out_cumux),
         .readwrite(rw_out_cumux),
         .size(size_out_cumux),
@@ -199,6 +199,13 @@ module PPU();
     );
 
     //Simulation stuff here!
+
+    // Generate clock signal, toggles every 2 time units
+always begin
+    clk = 0;
+    #2 clk = ~clk;
+end
+
 initial begin
     // Open and read the test code file
     fi = $fopen("precharge.txt", "r");
@@ -216,11 +223,7 @@ initial begin
     s = 1'b0;
 end
 
-// Generate clock signal, toggles every 2 time units
-always begin
-    clk = 0;
-    #2 clk = ~clk;
-end
+
 
 initial begin
     #3 rst = 1'b0;

@@ -20,7 +20,7 @@ module id_exe_reg(
     input clk, reset,
     input [1:0] am,
     input [3:0] alu_op,
-    input rf_en,s,datamem_en,readwrite,size,load_instruction,
+    input rf_en,s_bit,datamem_en,readwrite,size,load_instruction,
 
     output reg [1:0] am_out,
     output reg [3:0] alu_op_out,
@@ -41,7 +41,7 @@ module id_exe_reg(
             am_out = am;
             alu_op_out = alu_op;
             rf_en_out = rf_en;
-            s_out = s;
+            s_out = s_bit;
             datamem_en_out = datamem_en;
             readwrite_out = readwrite;
             size_out = size;
