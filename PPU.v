@@ -240,7 +240,8 @@ end
 //reg [63:0] cu_in_name;
 
 // Monitoring at every positive clock edge
-always @(posedge clk) begin
+always begin
+    #1
 
     // case (cu_in)
     //         32'he2110000: cu_in_name <= "ANDS"; //hardcoded keyword assignment test (following instructions)
@@ -295,7 +296,7 @@ always @(posedge clk) begin
     //         rf_en_out_memwb
     // );
 
-    $monitor("Current Time Unit = %t\tIns. = %b\tPC = %d\tAM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch Link = %b\nEX_STAGE: AM = %b\tS_bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLOAD = %b\nMEM_STAGE: RF_EN = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tLOAD = %b\nWB_STAGE: RF_EN = %b\n", 
+    $monitor("Current Time Unit = %t\nIns. = %b\nPC = %d\nID_SATE: AM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch Link = %b\nEX_STAGE: AM = %b\tS_Bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\nMEM_STAGE: RF_EN = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tLOAD = %b\nWB_STAGE: RF_EN = %b\n", 
     $time, cu_in, PC_Out, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, //First Line
     am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe, //Second Line
     rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem, //Third Line
