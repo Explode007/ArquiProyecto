@@ -212,26 +212,26 @@ initial begin
 
     // Initialize the signals
     LE = 1'b1;
-end
-
-initial begin
-    #41 $finish; //41 so it can print out 40
-end
-
-initial begin
     rst = 1'b1;
-    #3 rst = 1'b0;
-end
-
-initial begin
     s = 1'b0;
-    #32 s = 1'b1;
 end
 
 // Generate clock signal, toggles every 2 time units
 always begin
     clk = 0;
     #2 clk = ~clk;
+end
+
+initial begin
+    #3 rst = 1'b0;
+end
+
+initial begin
+    #15 s = 1'b1;
+end
+
+initial begin
+    #41 $finish; //41 so it can print out 40
 end
 
 //reg [63:0] cu_in_name;
