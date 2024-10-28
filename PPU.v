@@ -80,7 +80,7 @@ module PPU();
     );
 
     adder add(
-        .Adder_OUT(Adder_Out),
+        .Adder_OUT(PC_In),
         .Adder_IN(PC_Out)
     );
 
