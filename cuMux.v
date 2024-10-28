@@ -23,7 +23,7 @@ module cuMux (
 );
 
     always @* begin
-        if(s == 1'b1) begin // Pass Control Unit values when selector is 0
+        if(s == 1'b0) begin // Pass Control Unit values when selector is 0
             am_out <= am_in;
             rf_en_out <= rf_en_in;
             alu_op_out <= alu_op_in;
