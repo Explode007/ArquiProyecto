@@ -137,7 +137,7 @@ module PPU();
         .reset(rst),
 
         //INPUTS
-        .instruction(PC_Out),
+        .instruction(insMem_Out),
         
         //OUTPUTS
         .cu_in(cu_in)
@@ -221,20 +221,22 @@ initial begin
 
     // Change the mux control signal at time 32
     #32 s = 1'b1;
+end
 
-    // End the simulation at time 40
-    #40 $finish;
+always begin
+    #41 $finish; //41 so it can print out 40
 end
 
 // Generate clock signal, toggles every 2 time units
 always begin
+    clk = 0;
     #2 clk = ~clk;
 end
 
 // Monitoring at every positive clock edge
 always @(posedge clk) begin
     // First line: Instruction keyword, PC in decimal, and CU output signals in binary
-    $display("%0t\tInstruction = %h\tPC = %d\t%b\t%b\t%b\t%b\t%b\t%b\t%b\t%b\t%b", 
+    $display("%0t\tInstruction = %h\tPC = %d\tAM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch/Link = %b", 
             $time, 
             cu_in,              // Instruction arriving at CU (can use keyword from instruction)
             PC_Out,             // Program Counter (decimal)
@@ -274,6 +276,8 @@ always @(posedge clk) begin
     $display("WB_STAGE: RF_EN = %b", 
             rf_en_out_memwb
     );
+
+    $display("\n");
 end
 
 
