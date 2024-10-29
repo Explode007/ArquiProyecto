@@ -50,63 +50,74 @@ module control_unit (
         
         AM = 2'b00;  // Default AM signal
 
-        casez (category)
-            3'b00z: begin  // Data Processing (00I)
-                rf_en = 1;
-                s_bit = S;  
+        if (instruction == 32'b0) begin
+            rf_en = 0;
+            alu_op = 4'b0;
+            Load = 0;
+            AM = 0;
+            branch_link = 0;
+            s_bit = 0;
+            rw = 0;
+            size = 0;
+        end else begin
+            casez (category)
+                3'b00z: begin  // Data Processing (00I)
+                    rf_en = 1;
+                    s_bit = S;  
 
-                //How to shifter
-                if (I) begin
-                    AM = ROTATE_RIGHT;
-                end else begin
-                    if (bit4 == 0) begin
-                        AM = SHIFT_RM; //Normal immediate shift Rm by an Immediate
+                    //How to shifter
+                    if (I) begin
+                        AM = ROTATE_RIGHT;
+                    end else begin
+                        if (bit4 == 0) begin
+                            AM = SHIFT_RM; //Normal immediate shift Rm by an Immediate
+                        end
+                    end
+                
+                    case (opcode)
+                        4'b0000: alu_op = OP_ADD;           
+                        4'b0001: alu_op = OP_ADD_CIN;       
+                        4'b0010: alu_op = OP_A_SUB_B;       
+                        4'b0011: alu_op = OP_A_SUB_B_CIN;   
+                        4'b0100: alu_op = OP_B_SUB_A;       
+                        4'b0101: alu_op = OP_B_SUB_A_CIN;   
+                        4'b0110: alu_op = OP_AND;           
+                        4'b0111: alu_op = OP_OR;            
+                        4'b1000: alu_op = OP_XOR;           
+                        4'b1001: alu_op = OP_A_TRANSFER;    
+                        4'b1010: alu_op = OP_B_TRANSFER;    
+                        4'b1011: alu_op = OP_NOT_B;           
+                        4'b1100: alu_op = OP_A_AND_NOT_B;     
+                        default: alu_op = 4'b0000;            
+                    endcase
+                end
+
+                3'b01z: begin
+                                        
+                    Load = instruction[20]; // 1 for Load (LDR), 0 for Store (STR)
+                    rw = instruction[20]; // 1 for read, 0 for write
+                    size = instruction[22]; // Size: 1 for byte, 0 for word
+                    datamem_en = 1;
+
+                    if (I == 0) begin
+                        AM = ZERO_EXTEND; // For Offset-12
+                    end else begin
+                        if (instruction[11:4] == 0) begin
+                            AM = PASS_RM; // Register Offset
+                        end else begin 
+                            AM = SHIFT_RM; // Scaled Register Offset
+                        end
                     end
                 end
-            
-                case (opcode)
-                    4'b0000: alu_op = OP_ADD;           
-                    4'b0001: alu_op = OP_ADD_CIN;       
-                    4'b0010: alu_op = OP_A_SUB_B;       
-                    4'b0011: alu_op = OP_A_SUB_B_CIN;   
-                    4'b0100: alu_op = OP_B_SUB_A;       
-                    4'b0101: alu_op = OP_B_SUB_A_CIN;   
-                    4'b0110: alu_op = OP_AND;           
-                    4'b0111: alu_op = OP_OR;            
-                    4'b1000: alu_op = OP_XOR;           
-                    4'b1001: alu_op = OP_A_TRANSFER;    
-                    4'b1010: alu_op = OP_B_TRANSFER;    
-                    4'b1011: alu_op = OP_NOT_B;           
-                    4'b1100: alu_op = OP_A_AND_NOT_B;     
-                    default: alu_op = 4'b0000;            
-                endcase
-            end
 
-            3'b01z: begin
-                                     
-                Load = instruction[20]; // 1 for Load (LDR), 0 for Store (STR)
-                rw = instruction[20]; // 1 for read, 0 for write
-                size = instruction[22]; // Size: 1 for byte, 0 for word
-                datamem_en = 1;
-
-                if (I) begin
-                    AM = ZERO_EXTEND; // For Offset-12
-                end else begin
-                    if (instruction[11:4] == 0) begin
-                        AM = PASS_RM; // Register Offset
-                    end else begin 
-                        AM = SHIFT_RM; // Scaled Register Offset
-                    end
+                3'b101: begin  // Branch (101)
+                    branch_link = instruction[24]; // 1 for BL (Branch & Link), 0 for B (Branch)
                 end
-            end
 
-            3'b101: begin  // Branch (101)
-                branch_link = instruction[24]; // 1 for BL (Branch & Link), 0 for B (Branch)
-            end
-
-            default: begin
-                // No operation
-            end
-        endcase
+                default: begin
+                    // No operation
+                end
+            endcase
+        end
     end
 endmodule

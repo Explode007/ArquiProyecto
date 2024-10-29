@@ -1,9 +1,324 @@
-`include "Adder.v"
-`include "ControlUnit.v"
-`include "cuMux.v"
-`include "PC.v"
-`include "rom.v"
-`include "fase3pipereg.v"
+// `include "PC.v"
+// `include "Adder.v"
+// `include "rom.v"
+// `include "ControlUnit.v"
+// `include "cuMux.v"
+// `include "fase3pipereg.v"
+
+module PC (
+    output reg [31:0] PC_Out, 
+    input [31:0] PC_In, 
+    input E, Reset, clk 
+    );
+
+    always @ (posedge clk) begin
+        if (Reset) PC_Out <= 32'b00000000000000000000000000000000;
+        else if (E) PC_Out <= PC_In; 
+    end
+endmodule
+
+
+module adder(
+  output reg [31:0] Adder_OUT,
+  input[31:0] Adder_IN
+  );
+  always@(Adder_IN) 
+        begin
+             Adder_OUT = Adder_IN + 32'b100;
+        end
+endmodule
+
+
+module rom (
+    output reg [31:0] I, 
+    input [7:0] A 
+    );
+
+    reg [7:0] Mem [0:255];
+    
+    always @(A)
+        I = { Mem[A], Mem[A+1], Mem[A+2], Mem[A+3] };
+
+endmodule
+
+module control_unit (
+    input [31:0] instruction,  
+    output reg rf_en,          
+    output reg [3:0] alu_op,   
+    output reg Load,            // 1 for Load (LDR), 0 for Store (STR)
+    output reg branch_link,    // 1 for Branch & Link (BL), 0 for Branch (B)
+    output reg s_bit,          // S bit for updating the PSR (Program Status Register)
+    output reg rw,             // Read/Write signal: 1 for read (load), 0 for write (store)
+    output reg size,           // Size: 0 for byte, 1 for word
+    output reg datamem_en, // Data memory enable for load/store
+    output reg [1:0] AM
+);
+
+    parameter OP_ADD  = 4'b0000;
+    parameter OP_ADD_CIN = 4'b0001;
+    parameter OP_A_SUB_B  = 4'b0010;
+    parameter OP_A_SUB_B_CIN = 4'b0011;
+    parameter OP_B_SUB_A = 4'b0100;
+    parameter OP_B_SUB_A_CIN = 4'b0101;
+    parameter OP_AND = 4'b0110;
+    parameter OP_OR  = 4'b0111;
+    parameter OP_XOR = 4'b1000;
+    parameter OP_A_TRANSFER = 4'b1001;
+    parameter OP_B_TRANSFER = 4'b1010;
+    parameter OP_NOT_B = 4'b1011;
+    parameter OP_A_AND_NOT_B = 4'b1100;
+
+    parameter ROTATE_RIGHT = 2'b00;
+    parameter PASS_RM = 2'b01;
+    parameter ZERO_EXTEND = 2'b10;
+    parameter SHIFT_RM = 2'b11;
+
+    // Extract fields from the instruction
+    wire [2:0] category = instruction[27:25]; // Instruction category field (27:25)
+    wire [3:0] opcode = instruction[24:21];   // ALU opcode field (24:21)
+    wire I = instruction[25];                 // Immediate bit (I) for data processing | Register/Immediate offset bit for load/store (R)
+    wire S = instruction[20];
+    wire bit4 = instruction[4];
+    
+    always @(*) begin
+        // Default values
+        rf_en = 0;
+        alu_op = 4'b0000;
+        Load = 0;
+        branch_link = 0;
+        s_bit = 0;
+        rw = 0;
+        size = 0;  // Default to word (32 bits)
+        datamem_en = 0;
+        
+        AM = 2'b00;  // Default AM signal
+
+        if (instruction == 32'b0) begin
+            rf_en = 0;
+            alu_op = 4'b0;
+            Load = 0;
+            AM = 0;
+            branch_link = 0;
+            s_bit = 0;
+            rw = 0;
+            size = 0;
+        end else begin
+            casez (category)
+                3'b00z: begin  // Data Processing (00I)
+                    rf_en = 1;
+                    s_bit = S;  
+
+                    //How to shifter
+                    if (I) begin
+                        AM = ROTATE_RIGHT;
+                    end else begin
+                        if (bit4 == 0) begin
+                            AM = SHIFT_RM; //Normal immediate shift Rm by an Immediate
+                        end
+                    end
+                
+                    case (opcode)
+                        4'b0000: alu_op = OP_ADD;           
+                        4'b0001: alu_op = OP_ADD_CIN;       
+                        4'b0010: alu_op = OP_A_SUB_B;       
+                        4'b0011: alu_op = OP_A_SUB_B_CIN;   
+                        4'b0100: alu_op = OP_B_SUB_A;       
+                        4'b0101: alu_op = OP_B_SUB_A_CIN;   
+                        4'b0110: alu_op = OP_AND;           
+                        4'b0111: alu_op = OP_OR;            
+                        4'b1000: alu_op = OP_XOR;           
+                        4'b1001: alu_op = OP_A_TRANSFER;    
+                        4'b1010: alu_op = OP_B_TRANSFER;    
+                        4'b1011: alu_op = OP_NOT_B;           
+                        4'b1100: alu_op = OP_A_AND_NOT_B;     
+                        default: alu_op = 4'b0000;            
+                    endcase
+                end
+
+                3'b01z: begin
+                                        
+                    Load = instruction[20]; // 1 for Load (LDR), 0 for Store (STR)
+                    rw = instruction[20]; // 1 for read, 0 for write
+                    size = instruction[22]; // Size: 1 for byte, 0 for word
+                    datamem_en = 1;
+
+                    if (I == 0) begin
+                        AM = ZERO_EXTEND; // For Offset-12
+                    end else begin
+                        if (instruction[11:4] == 0) begin
+                            AM = PASS_RM; // Register Offset
+                        end else begin 
+                            AM = SHIFT_RM; // Scaled Register Offset
+                        end
+                    end
+                end
+
+                3'b101: begin  // Branch (101)
+                    branch_link = instruction[24]; // 1 for BL (Branch & Link), 0 for B (Branch)
+                end
+
+                default: begin
+                    // No operation
+                end
+            endcase
+        end
+    end
+endmodule
+
+
+module cuMux (
+    input s,
+
+    input [1:0] am_in,
+    input rf_en_in,          
+    input [3:0] alu_op_in,   
+    input Load_in,            
+    input branch_link_in,    
+    input s_bit_in,          
+    input rw_in,             
+    input size_in,           
+    input datamem_en_in,
+
+    output reg [1:0] am_out,         
+    output reg rf_en_out,          
+    output reg [3:0] alu_op_out,   
+    output reg Load_out,            
+    output reg branch_link_out,   
+    output reg s_bit_out,          
+    output reg rw_out,             
+    output reg size_out,           
+    output reg datamem_en_out
+);
+
+    always @* begin
+        if(s == 1'b0) begin // Pass Control Unit values when selector is 0
+            am_out = am_in;
+            rf_en_out = rf_en_in;
+            alu_op_out = alu_op_in;
+            Load_out = Load_in;
+            branch_link_out = branch_link_in;
+            s_bit_out = s_bit_in;
+            rw_out = rw_in;
+            size_out = size_in;
+            datamem_en_out = datamem_en_in;
+        end 
+        else begin
+            am_out = 2'b0;
+            rf_en_out = 1'b0;
+            alu_op_out = 1'b0;
+            Load_out = 1'b0;
+            branch_link_out = 1'b0;
+            s_bit_out = 1'b0;
+            rw_out = 1'b0;
+            size_out = 1'b0;
+            datamem_en_out = 1'b0;
+        end
+    end
+endmodule
+
+module if_id_reg(
+    input clk, load_enable,reset,
+    input [31:0] instruction, 
+    output reg [31:0] cu_in);
+
+    always @ (posedge clk) begin
+        if(load_enable) begin
+            if(reset) begin
+                // instruction = 0; (I don't know if this was missing)
+                cu_in <= 0;
+
+            end else begin
+                cu_in <= instruction;
+            end
+        end
+    end
+endmodule
+
+module id_exe_reg(
+    input clk, reset,
+    input [1:0] am,
+    input [3:0] alu_op,
+    input rf_en,s_bit,datamem_en,readwrite,size,load_instruction,
+
+    output reg [1:0] am_out,
+    output reg [3:0] alu_op_out,
+    output reg rf_en_out,s_out,datamem_en_out,readwrite_out,size_out,load_instruction_out
+    );
+
+    always @ (posedge clk) begin 
+        if(reset) begin
+            am_out <= 0;
+            alu_op_out <= 0;
+            rf_en_out <= 0;
+            s_out <= 0;
+            datamem_en_out <= 0;
+            readwrite_out <= 0;
+            size_out <= 0;
+            load_instruction_out <= 0;
+        end else begin
+            am_out <= am;
+            alu_op_out <= alu_op;
+            rf_en_out <= rf_en;
+            s_out <= s_bit;
+            datamem_en_out <= datamem_en;
+            readwrite_out <= readwrite;
+            size_out <= size;
+            load_instruction_out <= load_instruction;
+        end
+    end
+endmodule
+
+module exe_mem_reg(
+    input clk, reset,
+    input rf_en,datamem_en,readwrite,size,load_instruction,
+
+    output reg rf_en_out,datamem_en_out,readwrite_out,size_out,load_instruction_out
+    );
+
+    always @ (posedge clk) begin
+        if(reset) begin
+            rf_en_out <= 0;
+            datamem_en_out <= 0;
+            readwrite_out <= 0;
+            size_out <= 0;
+            load_instruction_out <= 0;
+        end else begin
+            rf_en_out <= rf_en;
+            datamem_en_out <= datamem_en;
+            readwrite_out <= readwrite;
+            size_out <= size;
+            load_instruction_out <= load_instruction;
+        end
+    end
+endmodule
+
+module mem_wb_reg(
+    input clk, reset,
+    input rf_en,
+
+    output reg rf_en_out
+    );
+
+    always @ (posedge clk)
+        begin
+        if(reset) begin
+            rf_en_out <= 0;
+        end else begin
+            rf_en_out <= rf_en;
+        end
+    end
+endmodule
+
+
+
+
+
+
+
+
+
+
+
 
 module PPU();
     reg rst;
@@ -202,8 +517,8 @@ module PPU();
 
     // Generate clock signal, toggles every 2 time units
 always begin
-    clk = 0;
-    #2 clk = ~clk;
+    clk <= 0;
+    #2 clk <= ~clk;
 end
 
 initial begin
@@ -218,91 +533,28 @@ initial begin
     $fclose(fi);  // Close the file
 
     // Initialize the signals
-    LE = 1'b1;
-    rst = 1'b1;
-    s = 1'b0;
-end
-
-
-
-initial begin
-    #3 rst = 1'b0;
-end
-
-initial begin
-    #32 s = 1'b1;
+    LE <= 1'b1;
+    rst <= 1'b1;
+    s <= 1'b0;
+    
+    // Do required timed changes
+    #3 rst <= 1'b0;
+    #32 s <= 1'b1;
+    
 end
 
 initial begin
-    #41 $finish; //41 so it can print out 40
+    #40 $finish; //41 so it can print out 40
 end
 
-//reg [63:0] cu_in_name;
-
-// Monitoring at every positive clock edge
 always begin
     #1
 
-    // case (cu_in)
-    //         32'he2110000: cu_in_name <= "ANDS"; //hardcoded keyword assignment test (following instructions)
-    //         32'he7d12000: cu_in_name <= "LDRB";
-    //         32'h1afffffd: cu_in_name <= "BNE";
-    //         32'he2010000: cu_in_name <= "AND";
-    //         32'h00000000: cu_in_name <= "NOP";
-    //         default: cu_in_name <= "XXXXX";
-    //     endcase
-
-
-    // // First line: Instruction keyword, PC in decimal, and CU output signals in binary
-    // $display("%0t\tInstruction = %h\tPC = %d\tAM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch/Link = %b", 
-    //         $time, 
-    //         //cu_in_name,         // Instruction arriving at CU (can use keyword from instruction)
-    //         cu_in,
-    //         PC_Out,             // Program Counter (decimal)
-    //         am_cu_out,          // AM from CU
-    //         s_bit_cu_out,       // S_bit from CU
-    //         datamem_en_cu_out,  // DATAMEM_EN from CU
-    //         rw_cu_out,          // Read/Write signal from CU
-    //         size_cu_out,        // Size (byte/word) from CU
-    //         rf_en_cu_out,       // RF_EN from CU
-    //         alu_op_cu_out,      // ALU_OP from CU
-    //         Load_cu_out,        // Load signal from CU
-    //         branch_link_cu_out  // Branch Link signal from CU
-    // );
-
-    // // Second line: Control signals at EX stage
-    // $display("EX_STAGE: AM = %b\tS_bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLOAD = %b", 
-    //         am_out_idexe, 
-    //         s_bit_out_idexe, 
-    //         datamem_en_out_idexe, 
-    //         rw_out_idexe, 
-    //         size_out_idexe, 
-    //         rf_en_out_idexe, 
-    //         alu_op_out_idexe, 
-    //         Load_out_idexe
-    // );
-
-    // // Third line: Control signals at MEM stage
-    // $display("MEM_STAGE: RF_EN = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tLOAD = %b", 
-    //         rf_en_out_exemem, 
-    //         datamem_en_out_exemem, 
-    //         rw_out_exemem, 
-    //         size_out_exemem, 
-    //         Load_out_exemem
-    // );
-
-    // // Fourth line: Control signals at WB stage
-    // $display("WB_STAGE: RF_EN = %b", 
-    //         rf_en_out_memwb
-    // );
-
-    $monitor("Current Time Unit = %t\nIns. = %b\nPC = %d\nID_SATE: AM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch Link = %b\nEX_STAGE: AM = %b\tS_Bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\nMEM_STAGE: RF_EN = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tLOAD = %b\nWB_STAGE: RF_EN = %b\n", 
+    $monitor("Current Time Unit = %t\nIns. = %b\nPC = %d\nID_STAGE: AM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch Link = %b\nEX_STAGE: AM = %b\tS_Bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\nMEM_STAGE: RF_EN = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tLoad = %b\nWB_STAGE: RF_EN = %b\n", 
     $time, cu_in, PC_Out, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, //First Line
     am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe, //Second Line
     rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem, //Third Line
     rf_en_out_memwb //Fourth Line
     );
 end
-
-
 endmodule

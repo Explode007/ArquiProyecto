@@ -7,10 +7,10 @@ module if_id_reg(
         if(load_enable) begin
             if(reset) begin
                 // instruction = 0; (I don't know if this was missing)
-                cu_in = 0;
+                cu_in <= 0;
 
             end else begin
-                cu_in = instruction;
+                cu_in <= instruction;
             end
         end
     end
@@ -29,23 +29,23 @@ module id_exe_reg(
 
     always @ (posedge clk) begin 
         if(reset) begin
-            am_out = 0;
-            alu_op_out = 0;
-            rf_en_out = 0;
-            s_out = 0;
-            datamem_en_out = 0;
-            readwrite_out = 0;
-            size_out = 0;
-            load_instruction_out = 0;
+            am_out <= 0;
+            alu_op_out <= 0;
+            rf_en_out <= 0;
+            s_out <= 0;
+            datamem_en_out <= 0;
+            readwrite_out <= 0;
+            size_out <= 0;
+            load_instruction_out <= 0;
         end else begin
-            am_out = am;
-            alu_op_out = alu_op;
-            rf_en_out = rf_en;
-            s_out = s_bit;
-            datamem_en_out = datamem_en;
-            readwrite_out = readwrite;
-            size_out = size;
-            load_instruction_out = load_instruction;
+            am_out <= am;
+            alu_op_out <= alu_op;
+            rf_en_out <= rf_en;
+            s_out <= s_bit;
+            datamem_en_out <= datamem_en;
+            readwrite_out <= readwrite;
+            size_out <= size;
+            load_instruction_out <= load_instruction;
         end
     end
 endmodule
@@ -59,17 +59,17 @@ module exe_mem_reg(
 
     always @ (posedge clk) begin
         if(reset) begin
-            rf_en_out = 0;
-            datamem_en_out = 0;
-            readwrite_out = 0;
-            size_out = 0;
-            load_instruction_out = 0;
+            rf_en_out <= 0;
+            datamem_en_out <= 0;
+            readwrite_out <= 0;
+            size_out <= 0;
+            load_instruction_out <= 0;
         end else begin
-            rf_en_out = rf_en;
-            datamem_en_out = datamem_en;
-            readwrite_out = readwrite;
-            size_out = size;
-            load_instruction_out = load_instruction;
+            rf_en_out <= rf_en;
+            datamem_en_out <= datamem_en;
+            readwrite_out <= readwrite;
+            size_out <= size;
+            load_instruction_out <= load_instruction;
         end
     end
 endmodule
@@ -84,9 +84,9 @@ module mem_wb_reg(
     always @ (posedge clk)
         begin
         if(reset) begin
-            rf_en_out = 0;
+            rf_en_out <= 0;
         end else begin
-            rf_en_out = rf_en;
+            rf_en_out <= rf_en;
         end
     end
 endmodule

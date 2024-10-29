@@ -5,5 +5,5 @@ module register(
 );
 
 always @(posedge Clk)
-    if(LE) Q = PW;
+    if(LE) Q <= PW;
 endmodule

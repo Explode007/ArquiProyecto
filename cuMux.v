@@ -24,26 +24,26 @@ module cuMux (
 
     always @* begin
         if(s == 1'b0) begin // Pass Control Unit values when selector is 0
-            am_out <= am_in;
-            rf_en_out <= rf_en_in;
-            alu_op_out <= alu_op_in;
-            Load_out <= Load_in;
-            branch_link_out <= branch_link_in;
-            s_bit_out <= s_bit_in;
-            rw_out <= rw_in;
-            size_out <= size_in;
-            datamem_en_out <= datamem_en_in;
+            am_out = am_in;
+            rf_en_out = rf_en_in;
+            alu_op_out = alu_op_in;
+            Load_out = Load_in;
+            branch_link_out = branch_link_in;
+            s_bit_out = s_bit_in;
+            rw_out = rw_in;
+            size_out = size_in;
+            datamem_en_out = datamem_en_in;
         end 
         else begin
-            am_out <= 2'b0;
-            rf_en_out <= 1'b0;
-            alu_op_out <= 1'b0;
-            Load_out <= 1'b0;
-            branch_link_out <= 1'b0;
-            s_bit_out <= 1'b0;
-            rw_out <= 1'b0;
-            size_out <= 1'b0;
-            datamem_en_out <= 1'b0;
+            am_out = 2'b0;
+            rf_en_out = 1'b0;
+            alu_op_out = 1'b0;
+            Load_out = 1'b0;
+            branch_link_out = 1'b0;
+            s_bit_out = 1'b0;
+            rw_out = 1'b0;
+            size_out = 1'b0;
+            datamem_en_out = 1'b0;
         end
     end
 endmodule
