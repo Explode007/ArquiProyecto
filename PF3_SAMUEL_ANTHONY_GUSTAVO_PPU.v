@@ -547,11 +547,29 @@ initial begin
     #40 $finish; //41 so it can print out 40
 end
 
+reg [167:0] instruction_name;
+
+always @ (*) begin
+
+    case (cu_in)
+        32'b00000000000000000000000000000000: instruction_name = "NOP";
+        32'b11100010000100010000000000000000: instruction_name = "ANDS R0,R1, #0";
+        32'b11100000100000000101000110000011: instruction_name = "ADD R5,R0,R3, LSL #3";
+        32'b11100111110100010010000000000000: instruction_name = "LDRB R2, [R1,R0]";
+        32'b11100101100010100101000000000000: instruction_name = "STR R5, [R10, #0]";
+        32'b00011010111111111111111111111101: instruction_name = "BNE -3";
+        32'b11011011000000000000000000001001: instruction_name = "BLLE+9";
+        32'b11100010000000010000000000000000: instruction_name = "AND R0,R1, #0";
+        default: instruction_name = "NULL";
+    endcase
+
+end
+
 always begin
     #1
 
-    $monitor("Current Time Unit = %t\nIns. = %b\nPC = %d\nID_STAGE: AM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch Link = %b\nEX_STAGE: AM = %b\tS_Bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\nMEM_STAGE: RF_EN = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tLoad = %b\nWB_STAGE: RF_EN = %b\n", 
-    $time, cu_in, PC_Out, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, //First Line
+    $monitor("Current Time Unit = %t\nIns. = %s %b\nPC = %d\nID_STAGE: AM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch Link = %b\nEX_STAGE: AM = %b\tS_Bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\nMEM_STAGE: RF_EN = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tLoad = %b\nWB_STAGE: RF_EN = %b\n", 
+    $time, instruction_name, cu_in, PC_Out, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, //First Line
     am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe, //Second Line
     rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem, //Third Line
     rf_en_out_memwb //Fourth Line
