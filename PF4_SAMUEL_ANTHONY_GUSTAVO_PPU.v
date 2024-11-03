@@ -5,6 +5,24 @@
 // `include "cuMux.v"
 // `include "fase3pipereg.v"
 
+
+//SPACE FOR PHASE 4 STUFF vvv
+module PSRmux(
+    input PSR_in,
+    input ALU_in,
+    input S_bit_in,
+    output reg Flags_out
+);
+
+    always @(*) begin
+        case (S_bit_in)
+        1'b0: Flags_out = ALU_in;
+        1'b1: Flags_out = PSR_in;       
+        endcase
+    end
+endmodule
+
+//SPACE FOR PHASE 4 STUFF ^^^
 module PC (
     output reg [31:0] PC_Out, 
     input [31:0] PC_In, 
@@ -417,6 +435,25 @@ module PPU();
     wire rf_en_out_memwb;
 
     //Instantiations here!
+
+//SPACE FOR PHASE 4 STUFF vvv (Remember to make wires in the Pipeline)
+    wire PSR_out;
+    wire ALU_out;
+    wire Flags_out;
+    
+    PSRmux psrmux(
+        .PSR_in(),
+        .ALU_in(),
+        .S_bit_in(),
+        .Flags_out(),
+    );
+
+
+
+
+//SPACE FOR PHASE 4 STUFF ^^^
+
+
     PC PCReg(
         .E(LE), 
         .Reset(rst), 
