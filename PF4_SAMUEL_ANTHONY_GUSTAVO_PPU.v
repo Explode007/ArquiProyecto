@@ -54,7 +54,7 @@ module PPU();
                 endcase
 
             end
-        //======Init Stuff======//
+
 
         //======Monitor=======//
             always begin
@@ -67,9 +67,9 @@ module PPU();
                 rf_en_out_memwb //Fourth Line
                 );
             end
-        //======Monitor=======//
 
-    //======Simulation======//
+
+
 
     //==================INSTANTIATION===================//
         //Generic Wires
@@ -267,7 +267,7 @@ module PPU();
             //OUTPUTS
             .rf_en_out(rf_en_out_memwb)
         );
-    //==================INSTANTIATION===================//
+
 endmodule
 
 //==================MODULES===================//
@@ -630,4 +630,3 @@ endmodule
         end
     endmodule
 
-//==================MODULES===================//
