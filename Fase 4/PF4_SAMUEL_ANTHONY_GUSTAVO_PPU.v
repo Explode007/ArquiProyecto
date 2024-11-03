@@ -78,15 +78,15 @@ module PPU();
         reg clk;
         
         //SPACE FOR PHASE 4 STUFF vvv (Remember to make wires in the Pipeline)
-        // wire PSR_out;
-        // wire ALU_out;
-        // wire Flags_out;
-        // PSRmux psrmux(
-        //     .PSR_in(),
-        //     .ALU_in(),
-        //     .S_bit_in(),
-        //     .Flags_out(),
-        // );
+        wire PSR_out;
+        wire ALU_out;
+        wire Flags_out;
+        PSRmux psrmux(
+            .PSR_in(),
+            .ALU_in(),
+            .S_bit_in(),
+            .Flags_out(),
+        );
         //SPACE FOR PHASE 4 STUFF ^^^ 
 
 
