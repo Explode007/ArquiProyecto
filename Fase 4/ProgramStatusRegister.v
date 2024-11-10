@@ -1,3 +1,4 @@
+//TODO: Possibly Redo this with 32 bits rather than just the necessary flags
 module ProgramStatusRegister(
     input S_bit_in,
     

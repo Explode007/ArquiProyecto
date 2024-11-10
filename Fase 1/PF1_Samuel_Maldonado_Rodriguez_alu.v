@@ -5,7 +5,7 @@ module ALU (
     
     output reg [31:0] Out, 
     output reg Z, N, C, V 
-);
+    );
     parameter OP_ADD  = 4'b0000;
     parameter OP_ADD_CIN = 4'b0001;
     parameter OP_A_SUB_B  = 4'b0010;
@@ -71,7 +71,7 @@ module Shifter_SignExtender (
     input [1:0] AM,   
 
     output reg [31:0] N  
-);
+    );
 
     //Shift Types
     parameter LSL = 2'b00;  // Logical Shift Left

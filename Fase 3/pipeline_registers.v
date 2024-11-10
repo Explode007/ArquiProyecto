@@ -2,6 +2,7 @@ module if_id_reg(
 input clk, load_enable,reset,
 input [31:0] instruction, 
 input [31:0] next_pc,
+
 output reg [3:0] instruction_condition, 
 output reg [23:0] branch_offset, 
 output reg [31:0] next_pc_out, 
