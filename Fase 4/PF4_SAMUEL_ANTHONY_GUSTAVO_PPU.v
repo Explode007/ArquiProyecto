@@ -286,7 +286,7 @@ module PPU();
 
                 //INPUTS
                 .instruction(insMem_Out),
-                .next_pc_in(),
+                .next_pc_in(PC_adder_out),
                 
                 //OUTPUTS
                 .instr_cond(instr_cond),
@@ -514,7 +514,6 @@ endmodule
         end
     endmodule
 
-    //TODO: Logic for both of these MUX implementations
     module In2Out1MUX32(
         input [31:0] In1, In2;
         input selector;
@@ -522,19 +521,27 @@ endmodule
         output [31:0] out;
         );  
         always @(*) begin
-        
-        
+            if (selector) begin
+                out = In1;
+            end else begin
+                out = In2;
+            end
         end
     endmodule
     
     module In4Out1MUX32(
-        input [31:0] In1, In2;
-        input [1:0] selector;
+        input [31:0] In1, In2, In3, In4;
+        input [3:0] selector;
 
         output [31:0] out;
         );  
         always @(*) begin
-        
+            case (selector)
+            2'b00: out = In1;
+            2'b01: out = In2;
+            2'b10: out = In3;
+            2'b11: out = In4;           
+            endcase
         
         end
     endmodule
