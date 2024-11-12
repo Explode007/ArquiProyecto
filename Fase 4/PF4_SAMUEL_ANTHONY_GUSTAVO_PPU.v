@@ -76,23 +76,101 @@ module PPU();
         reg LE;
         reg rst;
         reg clk;
-        
         //================================================================
-        //ALU //TODO: Instantiate
-            wire Alu_out;
+        //RF Mux SaveNEXTPC
+            wire [31:0] RF_MUX_SAVENEXTPC_OUT;
+            In2Out1MUX32(
+                .In1(rd_ifid),
+                .In2(4'b1110),
+                .selector(bl_condition_out),
+                .out(RF_MUX_SAVENEXTPC_OUT)
+            );
+        //================================================================
+        //Operand MUXES
+            wire [1:0] ASelector;
+            wire [1:0] BSelector;
+            wire [1:0] DSelector;
+            wire [31:0] OperandA_MUX_OUT;
+            wire [31:0] OperandB_MUX_OUT;
+            wire [31:0] OperandD_MUX_OUT;
+
+            //Pile these wires with Register file
+            wire [31:0] Operand_A_OUT_RF;
+            wire [31:0] Operand_B_OUT_RF;
+            wire [31:0] Operand_D_OUT_RF;
+
+            In4Out1MUX32 OperandAMUX(
+                .In1(Operand_A_OUT_RF),
+                .In2(WBTORF_MUX_out),
+                .In3(dataWB_memwb),
+                .In4(NextPCORAALU_MUX_OUT),
+
+                .selector(ASelector),
+                .out(OperandA_MUX_OUT),
+            );
+            In4Out1MUX32 OperandBMUX(
+                .In1(Operand_B_OUT_RF),
+                .In2(WBTORF_MUX_out),
+                .In3(dataWB_memwb),
+                .In4(NextPCORAALU_MUX_OUT),
+
+                .selector(BSelector),
+                .out(OperandB_MUX_OUT),
+            );
+            In4Out1MUX32 OperandDMUX(
+                .In1(Operand_D_OUT_RF),
+                .In2(WBTORF_MUX_out),
+                .In3(dataWB_memwb),
+                .In4(NextPCORAALU_MUX_OUT),
+
+                .selector(DSelector),
+                .out(OperandD_MUX_OUT),
+            );
+        //================================================================
+        //WBTORF MUX
+            wire [31:0] WBTORF_MUX_out;
+            In2Out1MUX32 WBTORFMUX(
+                .In1(AluORNextPC_out_exemem),
+                .In2(mem_mux_out),
+                .selector(Load_out_exemem),
+                .out(WBTORF_MUX_out)
+            )
+        //================================================================
+        //NextPCORALU MUX
+            wire [31:0] NextPCORAALU_MUX_OUT;
+            wire [31:0] NextPCORALUMUX_In1;
+            wire NextPCORALU_CTRL_OUT;
+            In2Out1MUX32 NextPCORALU(
+                .In1(NextPCORALUMUX_In1),
+                .In2(Alu_out),
+                .selector(NextPCORALU_CTRL_OUT),
+                .out(NextPCORAALU_MUX_OUT)
+            );
+        //================================================================
+        //ALU
+            wire [31:0] Alu_out;
             //TODO: Flags remake
             // wire Z_alu, N_alu, C_alu, V_alu;
 
             ALU alu (
                 .Op(alu_op_out_idexe),
-                .A(),
-                .B(),
+                .A(OperandA_out_idexe),
+                .B(Shifter_out),
                 .CIN(),
 
                 .Out(Alu_out),
                 //TODO: Flags remake            
-            )
+            );
+        //================================================================
+        //Shifter SignExtender
+            wire [31:0] Shifter_out;
+            Shifter_SignExtender shifter(
+                .Rm(OperandB_out_idexe),
+                .I(immediate_out_idexe),
+                .AM(am_out_idexe),
 
+                .N(Shifter_out)
+            );
         //================================================================
         //Condition Handler //TODO: Flags rework
             //These are some ALU WIRES
@@ -179,7 +257,7 @@ module PPU();
             wire [31:0] BranchRel_out;
             adder RelAdder(
                 .Adder_IN1(PC_adder_out),
-                .Adder_IN2(),
+                .Adder_IN2(), //TODO: Need to input the rotated thing here
 
                 .Adder_OUT(BranchRel_out)
             );
@@ -190,7 +268,7 @@ module PPU();
                 .Adder_IN1(PC_Out),
                 .Adder_IN2(32'b100),
 
-                .Adder_OUT(PC_adder_out) //TODO: adder out should not be PC_IN, should go through BRANCH MUX
+                .Adder_OUT(PC_adder_out)
             );
         //================================================================
         //Instruction Memory
@@ -317,13 +395,7 @@ module PPU();
             wire [31:0] rd_out_idexe;
             wire [3:0] instr_cond_idexe;
 
-            //TODO: Move these wires when you make operand muxes & nextPCORALU mux
-            wire [31:0] OperandAMUX_out;
-            wire [31:0] OperandBMUX_out;
-            wire [31:0] OperandDMUX_out;
-            wire [31:0] NextPCORALUMUX_In1;
-            wire NextPCORALU_CTRL_OUT;
-            wire [31:0] SaveNextPCMUX_out; //This one goes in ID stage
+            
             id_exe_reg ID_EXE(
                 .clk(clk), 
                 .reset(rst),
@@ -339,11 +411,11 @@ module PPU();
                 .alu_op_in(alu_op_out_cumux),
                 .instr_cond_in(instr_cond_ifid),
                 .next_pc_in(next_pc_out_ifid)
-                .operand_a_in(OperandAMUX_out),
-                .operand_b_in(OperandBMUX_out),
-                .operand_d_in(OperandDMUX_out),
+                .operand_a_in(OperandA_MUX_out),
+                .operand_b_in(OperandB_MUX_out),
+                .operand_d_in(OperandD_MUX_out),
                 .immediate_in(immediate_ifid),
-                .rd_in(SaveNextPCMUX_out),
+                .rd_in(RF_MUX_SAVENEXTPC_OUT),
                 .NEXTORALU_ctrl_in(bl_condition_out),
 
                 //OUTPUTS
@@ -366,43 +438,58 @@ module PPU();
             );
 
         //================================================================
-        //Execute Memory PPR //TODO: Implement remaining registers
+        //Execute Memory PPR
             wire rf_en_out_exemem;
             wire rw_out_exemem;
             wire size_out_exemem;
             wire datamem_en_out_exemem;
             wire Load_out_exemem;
+            wire [31:0] AluORNextPC_out_exemem;
+            wire [31:0] OperandD_out_exemem;
+            wire [3:0] rd_out_exemem;
             exe_mem_reg EXE_MEM(
                 .clk(clk),
                 .reset(rst),
 
                 //INPUTS
-                .rf_en(rf_en_out_idexe),
-                .datamem_en(datamem_en_out_idexe),
-                .readwrite(rw_out_idexe),
-                .size(size_out_idexe),
-                .load_instruction(Load_out_idexe),
+                .rf_en_in(rf_en_out_idexe),
+                .datamem_en_in(datamem_en_out_idexe),
+                .readwrite_in(rw_out_idexe),
+                .size_in(size_out_idexe),
+                .load_instruction_in(Load_out_idexe),
+                .AluORNextPC_in(NextPCORAALU_MUX_OUT), 
+                .OperandD_in(OperandD_out_idexe),
+                .rd_in(rd_out_idexe)
                 
                 //OUTPUTS
                 .rf_en_out(rf_en_out_exemem),
                 .datamem_en_out(datamem_en_out_exemem),
                 .readwrite_out(rw_out_exemem),
                 .size_out(size_out_exemem),
-                .load_instruction_out(Load_out_exemem)
+                .load_instruction_out(Load_out_exemem),
+                .AluORNextPC_out(AluORNextPC_out_exemem),
+                .OperandD_out(OperandD_out_exemem),
+                .rd_out(rd_out_exemem)
             );
         
         //================================================================
-        //Memory Writeback PPR //TODO: Implement remaining registers
+        //Memory Writeback PPR
             wire rf_en_out_memwb;
+            wire [3:0] rd_out_memwb;
+            wire [31:0] dataWB_memwb;
             mem_wb_reg MEM_WB(
                 .clk(clk),
                 .reset(rst),
                 
                 //INPUTS
-                .rf_en(rf_en_out_exemem),
+                .rf_en_in(rf_en_out_exemem),
+                .rd_in(rd_out_exemem),
+                .mem_mux_in(WBTORF_MUX_out),
                 
                 //OUTPUTS
-                .rf_en_out(rf_en_out_memwb)
+                .rf_en_out(rf_en_out_memwb),
+                .rd_out(rd_out_memwb),
+                .mem_mux_out(dataWB_memwb), //TODO: Goes to MUX WB TO RF
             );
         //================================================================
 endmodule
@@ -531,7 +618,7 @@ endmodule
     
     module In4Out1MUX32(
         input [31:0] In1, In2, In3, In4;
-        input [3:0] selector;
+        input [1:0] selector;
 
         output [31:0] out;
         );  
@@ -559,7 +646,7 @@ endmodule
         input [1:0] AM,   
 
         output reg [31:0] N
-            );
+        );
 
         //Shift Types
         parameter LSL = 2'b00;  // Logical Shift Left
@@ -599,9 +686,9 @@ endmodule
         input CIN,            
         
         output reg [31:0] Out, 
-
         //TODO: Remake flags to be [32:0] output where the first 4 bits are these flags or whatever.
         output reg Z, N, C, V 
+
         );
         parameter OP_ADD  = 4'b0000;
         parameter OP_ADD_CIN = 4'b0001;
@@ -692,7 +779,6 @@ endmodule
         
         always @(A)
             I = { Mem[A], Mem[A+1], Mem[A+2], Mem[A+3] };
-
     endmodule
 
     module control_unit (
@@ -1008,11 +1094,17 @@ endmodule
         end
     endmodule
 
-    //TODO: Implement remaining registers
     module exe_mem_reg(
         input clk, reset,
-        input rf_en,datamem_en,readwrite,size,load_instruction,
 
+        input rf_en_in ,datamem_en_in ,readwrite_in ,size_in ,load_instruction_in ,
+        input [31:0] AluORNextPC_in,
+        input [31:0] OperandD_in,
+        input [3:0] rd_in,
+
+        output reg [31:0] AluORNextPC_out,
+        output reg [31:0] OperandD_out,
+        output reg [3:0] rd_out,
         output reg rf_en_out,datamem_en_out,readwrite_out,size_out,load_instruction_out
         );
 
@@ -1023,30 +1115,44 @@ endmodule
                 readwrite_out <= 0;
                 size_out <= 0;
                 load_instruction_out <= 0;
+                AluORNextPC_out <= 0;
+                OperandD_out <= 0;
+                rd_out <= 0;
             end else begin
-                rf_en_out <= rf_en;
-                datamem_en_out <= datamem_en;
-                readwrite_out <= readwrite;
-                size_out <= size;
-                load_instruction_out <= load_instruction;
+                rf_en_out <= rf_en_in;
+                datamem_en_out <= datamem_en_in;
+                readwrite_out <= readwrite_in;
+                size_out <= size_in;
+                load_instruction_out <= load_instruction_in;
+                AluORNextPC_out <= AluORNextPC_in;
+                OperandD_out <= OperandD_in;
+                rd_out <= rd_in;
             end
         end
     endmodule
 
-    //TODO: Implement remaining registers
     module mem_wb_reg(
         input clk, reset,
-        input rf_en,
 
+        input rf_en_in,
+        input [3:0] rd_in,
+        input [31:0] mem_mux_in,
+        
         output reg rf_en_out
+        output reg [31:0] mem_mux_out,
+        output reg [3:0] rd_out,
         );
 
         always @ (posedge clk)
             begin
             if(reset) begin
                 rf_en_out <= 0;
+                mem_mux_out <= 0;
+                rd_out <= 0;
             end else begin
-                rf_en_out <= rf_en;
+                rf_en_out <= rf_en_in;
+                mem_mux_out <= mem_mux_in;
+                rd_out <= rd_in;
             end
         end
     endmodule
