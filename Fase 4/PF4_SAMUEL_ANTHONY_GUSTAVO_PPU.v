@@ -492,9 +492,36 @@ module PPU();
                 .mem_mux_out(dataWB_memwb), //TODO: Goes to MUX WB TO RF
             );
         //================================================================
+        //Hazard & Forwarding Unit
+            wire
 endmodule
 
 //==================MODULES===================//
+    module HazardForwardingUnit(
+        input [31:0] rb_in,
+        input [31:0] ra_in,
+        input COND_EVAL_in,
+        input load_instruc_in,
+
+        input [31:0] rd_in_id,
+        input [31:0] rd_in_exe,
+        input [31:0] rd_in_mem,
+        input [31:0] rd_in_wb,
+        
+        input rf_en_exe,
+        input rf_en_mem,
+        input rf_en_wb,
+
+        output CU_MUX_CTRL,
+        output IFID_LE_CTRL,
+        output PC_LE_CTRL,
+        output OperandA_MUX_CTRL,
+        output OperandB_MUX_CTRL,
+        output OperandD_MUX_CTRL,
+        );
+    
+    endmodule
+
     //TODO: Rework flag logic
     module ConditionHandler(
         input B_in,
