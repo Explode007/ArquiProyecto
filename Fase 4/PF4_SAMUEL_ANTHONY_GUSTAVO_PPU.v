@@ -149,17 +149,16 @@ module PPU();
         //================================================================
         //ALU
             wire [31:0] Alu_out;
-            //TODO: Flags remake
-            // wire Z_alu, N_alu, C_alu, V_alu;
+            wire [31:0] Alu_flags_out;
 
             ALU alu (
                 .Op(alu_op_out_idexe),
                 .A(OperandA_out_idexe),
                 .B(Shifter_out),
-                .CIN(),
+                .CIN(Flags_out_PSR[2]), //[2] is the C flag
 
                 .Out(Alu_out),
-                //TODO: Flags remake            
+                .Flags(Alu_flags_out)     
             );
         //================================================================
         //Shifter SignExtender
@@ -183,10 +182,7 @@ module PPU();
                 .B_in(B_signal),
                 .BL_in(BL_signal),
                 .I_Cond_in(condition_code),
-                .Z_in(Z_out),
-                .N_in(N_out),
-                .C_in(C_out),
-                .V_in(V_out),
+                .Flags_in(PSR_MUX_OUT),
 
                 .TA_Ctrl_out(TA_Ctrl_out),
                 .BL_COND_out(bl_condition_out),
@@ -194,42 +190,23 @@ module PPU();
             );
 
         //================================================================
-        //PSR MUX //TODO: Flags rework
-            wire Z_out, N_out, C_out, V_out;
-            PSRmux psrmux(
-                .S_bit_in(s_bit_out_cumux),
-
-                .Z_PSR_in(Z_psr),
-                .N_PSR_in(N_psr),
-                .C_PSR_in(C_psr),
-                .V_PSR_in(V_psr),
-
-                .Z_ALU_in(Z_alu),
-                .N_ALU_in(N_alu),
-                .C_ALU_in(C_alu),
-                .V_ALU_in(V_alu),
-
-                .Z_out(Z_out),
-                .N_out(N_out),
-                .C_out(C_out),
-                .V_out(V_out)
+        //PSR MUX
+            wire [31:0] PSR_MUX_OUT;
+            In2Out1MUX32 psrmux(
+                .In1(Alu_flags_out),
+                .In2(Flags_out_PSR),
+                .selector(s_bit_out_idexe),
+                .out(PSR_MUX_OUT)
             );
 
         //================================================================
-        //Program Status Register //TODO: Flags rework
-            wire Z_psr, N_psr, C_psr, V_psr;
+        //Program Status Register
+            wire Flags_out_PSR;
             ProgramStatusRegister PSR(
-                .S_bit_in(s_bit_out_cumux),
+                .S_bit_in(s_bit_out_idexe),
 
-                .Z_in(Z_alu),
-                .N_in(N_alu),
-                .C_in(C_alu),
-                .V_in(V_alu),
-
-                .Z_out(Z_psr),
-                .N_out(N_psr),
-                .C_out(C_psr),
-                .V_out(V_psr)
+                .Flags_in(Alu_flags_out),
+                .Flags_out(Flags_out_PSR)
             );
         //================================================================
         //Program Counter
@@ -493,7 +470,7 @@ module PPU();
             );
         //================================================================
         //Hazard & Forwarding Unit
-            wire
+            
 endmodule
 
 //==================MODULES===================//
@@ -522,21 +499,19 @@ endmodule
     
     endmodule
 
-    //TODO: Rework flag logic
     module ConditionHandler(
         input B_in,
         input BL_in,
         input [3:0] I_Cond_in,
 
-        input Z_in,
-        input N_in,
-        input C_in,
-        input V_in,
+        input [31:0] Flags_in,
 
         output reg TA_Ctrl_out,
         output reg BL_COND_out,
         output reg COND_EVAL_out
         );
+
+        reg Z,N,C,V;
 
         parameter EQUALS            = 4'b0000;
         parameter NOT_EQUALS        = 4'b0001;
@@ -555,26 +530,32 @@ endmodule
         parameter ALWAYS            = 4'b1110;
         parameter NEVER             = 4'b1111;
 
-        always @* begin
+        always @(*) begin
+            Z = Flags_in[0];
+            N = Flags_in[1];
+            C = Flags_in[2];
+            V = Flags_in[3];
+
+
             TA_Ctrl_out = 0;
             BL_COND_out = 0;
             COND_EVAL_out = 0;
 
             case (I_Cond_in)
-                EQUALS:           COND_EVAL_out = Z_in;
-                NOT_EQUALS:       COND_EVAL_out = ~Z_in;
-                CARRY_SET:        COND_EVAL_out = C_in;
-                CARRY_CLEAR:      COND_EVAL_out = ~C_in;
-                MINUS:            COND_EVAL_out = N_in;
-                PLUS:             COND_EVAL_out = ~N_in;
-                OVERFLOW:         COND_EVAL_out = V_in;
-                NO_OVERFLOW:      COND_EVAL_out = ~V_in;
-                UNSIGNED_HIGHER:  COND_EVAL_out = C_in && ~Z_in;
-                UNSIGNED_LOWER:   COND_EVAL_out = ~C_in || Z_in;
-                GREATER_EQUAL:    COND_EVAL_out = (N_in == V_in);
-                LESS_THAN:        COND_EVAL_out = (N_in != V_in);
-                GREATER_THAN:     COND_EVAL_out = ~Z_in && (N_in == V_in);
-                LESS_EQUAL:       COND_EVAL_out = Z_in || (N_in != V_in);
+                EQUALS:           COND_EVAL_out = Z;
+                NOT_EQUALS:       COND_EVAL_out = ~Z;
+                CARRY_SET:        COND_EVAL_out = C;
+                CARRY_CLEAR:      COND_EVAL_out = ~C;
+                MINUS:            COND_EVAL_out = N;
+                PLUS:             COND_EVAL_out = ~N;
+                OVERFLOW:         COND_EVAL_out = V;
+                NO_OVERFLOW:      COND_EVAL_out = ~V;
+                UNSIGNED_HIGHER:  COND_EVAL_out = C && ~Z;
+                UNSIGNED_LOWER:   COND_EVAL_out = ~C || Z;
+                GREATER_EQUAL:    COND_EVAL_out = (N == V);
+                LESS_THAN:        COND_EVAL_out = (N != V);
+                GREATER_THAN:     COND_EVAL_out = ~Z && (N == V);
+                LESS_EQUAL:       COND_EVAL_out = Z || (N != V);
                 ALWAYS:           COND_EVAL_out = 1;
                 NEVER:            COND_EVAL_out = 0;
                 default:          COND_EVAL_out = 0;
@@ -585,46 +566,23 @@ endmodule
         end
     endmodule
     
-    //TODO: Rework flag logic
-    module PSRmux(
-        input PSR_in,
-        input ALU_in,
-        input S_bit_in,
-        output reg Flags_out
-        );
-
-        always @(*) begin
-            case (S_bit_in)
-            1'b0: Flags_out = ALU_in;
-            1'b1: Flags_out = PSR_in;       
-            endcase
-        end
-    endmodule
-    
-    //TODO: Rework flag logic
     module ProgramStatusRegister(
         input S_bit_in,
-        
-        //'Condition Codes'
-        input Z_in,
-        input N_in,
-        input C_in,
-        input V_in,
 
-        //'Flags' Out
-        output reg Z_out,
-        output reg N_out,
-        output reg C_out,
-        output reg V_out
+        input [31:0] Flags_in, 
+        output reg [31:0] Flags_out 
         );
 
-        always @* begin
+        reg Z, N, C, V;
+
+        always @(*) begin
             if (S_bit_in) begin
-                Z_out <= Z_in;
-                N_out <= N_in;
-                C_out <= C_in;
-                V_out <= V_in;
+            Z <= Flags_in[0];
+            N <= Flags_in[1];
+            C <= Flags_in[2];
+            V <= Flags_in[3];
             end
+            Flags_out <= {28'b0, V,C,N,Z};
         end
     endmodule
 
@@ -706,15 +664,13 @@ endmodule
         end
     endmodule
 
-    //TODO: Rework flag logic
     module ALU (
         input [3:0] Op,     
         input [31:0] A, B,
         input CIN,            
         
-        output reg [31:0] Out, 
-        //TODO: Remake flags to be [32:0] output where the first 4 bits are these flags or whatever.
-        output reg Z, N, C, V 
+        output reg [31:0] Out,       
+        output reg [31:0] Flags
 
         );
         parameter OP_ADD  = 4'b0000;
@@ -732,7 +688,7 @@ endmodule
         parameter OP_A_AND_NOT_B = 4'b1100;
         
         //When using {C, Out}, its like we have a 33 bit 'space', so that the 33rd bit falls into C and is not lost.
-    
+        reg Z, N, C, V;
         always @(*) begin
 
             C = 1'b0; //Carry 0 by default, only updates it if the instruction passes a carry bit. 
@@ -772,6 +728,7 @@ endmodule
             end else begin
                 V = 1'b0; // Logical operation -> No overflow
             end
+            Flags = {28'b0, V,C,N,Z}; //New flags format
         end
     endmodule
 
