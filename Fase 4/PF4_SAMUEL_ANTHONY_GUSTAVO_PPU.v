@@ -87,14 +87,11 @@ module PPU();
             );
         //================================================================
         //Operand MUXES
-            wire [1:0] ASelector;
-            wire [1:0] BSelector;
-            wire [1:0] DSelector;
             wire [31:0] OperandA_MUX_OUT;
             wire [31:0] OperandB_MUX_OUT;
             wire [31:0] OperandD_MUX_OUT;
 
-            //Pile these wires with Register file
+            //TODO: Pile these wires with Register file
             wire [31:0] Operand_A_OUT_RF;
             wire [31:0] Operand_B_OUT_RF;
             wire [31:0] Operand_D_OUT_RF;
@@ -171,17 +168,14 @@ module PPU();
                 .N(Shifter_out)
             );
         //================================================================
-        //Condition Handler //TODO: Flags rework
-            //These are some ALU WIRES
-            wire [3:0] condition_codes;
-
+        //Condition Handler 
             wire TA_Ctrl_out;
             wire bl_condition_out;
             wire COND_EVAL_out;
             ConditionHandler condhandler (
                 .B_in(B_signal),
                 .BL_in(BL_signal),
-                .I_Cond_in(condition_code),
+                .I_Cond_in(instr_cond_idexe),
                 .Flags_in(PSR_MUX_OUT),
 
                 .TA_Ctrl_out(TA_Ctrl_out),
@@ -228,7 +222,6 @@ module PPU();
 
                 .out(BranchMux_out)
             );
-
         //================================================================
         //Branch Rel PC Adder
             wire [31:0] BranchRel_out;
@@ -254,8 +247,6 @@ module PPU();
                 .I(insMem_Out),
                 .A(PC_Out[7:0])
             );
-        
-
         //================================================================
         //Control Unit (Wires TO MUX)
             wire [1:0] am_cu_out;
@@ -284,10 +275,8 @@ module PPU();
                 .size(size_cu_out),
                 .datamem_en(datamem_en_cu_out)
             );
-
         //================================================================
         //Control Unit MUX 
-            reg s;
             wire [1:0] am_out_cumux;
             wire rf_en_out_cumux;
             wire [3:0] alu_op_out_cumux;
@@ -299,11 +288,11 @@ module PPU();
             wire size_out_cumux;
             wire datamem_en_out_cumux;
             cuMux Mux(
-                .s(s),
+                .s(CU_MUX_CTRL_OUT),
                 
                 //INPUTS
                 .am_in(am_cu_out),
-                .rf_en_in(rf_en_cu_out),
+                .rf_en_in(inbetweenCUCUMUX_MUX_OUT),
                 .alu_op_in(alu_op_cu_out),
                 .Load_in(Load_cu_out),
                 .branch_in(branch_cu_out),
@@ -325,7 +314,6 @@ module PPU();
                 .size_out(size_out_cumux),
                 .datamem_en_out(datamem_en_out_cumux)
             );
-
         //================================================================
         //Fetch Decode PPR
             wire [3:0] instr_cond_ifid;
@@ -336,7 +324,7 @@ module PPU();
             wire [31:0] cu_in;
             if_id_reg IF_ID(
                 .clk(clk),
-                .load_enable(LE),
+                .load_enable(IFID_LE_CTRL_OUT),
                 .reset(rst),
 
                 //INPUTS
@@ -353,7 +341,6 @@ module PPU();
                 .next_pc_out(next_pc_out_ifid),
                 .cu_in(cu_in),
             );
-
         //================================================================
         //Decode Execute PPR
             wire rf_en_out_idexe;
@@ -388,9 +375,9 @@ module PPU();
                 .alu_op_in(alu_op_out_cumux),
                 .instr_cond_in(instr_cond_ifid),
                 .next_pc_in(next_pc_out_ifid)
-                .operand_a_in(OperandA_MUX_out),
-                .operand_b_in(OperandB_MUX_out),
-                .operand_d_in(OperandD_MUX_out),
+                .operand_a_in(OperandA_MUX_OUT),
+                .operand_b_in(OperandB_MUX_OUT),
+                .operand_d_in(OperandD_MUX_OUT),
                 .immediate_in(immediate_ifid),
                 .rd_in(RF_MUX_SAVENEXTPC_OUT),
                 .NEXTORALU_ctrl_in(bl_condition_out),
@@ -413,7 +400,6 @@ module PPU();
                 .rd_out(rd_out_idexe),
                 .NEXTORALU_ctrl_out(NextPCORALU_CTRL_OUT),
             );
-
         //================================================================
         //Execute Memory PPR
             wire rf_en_out_exemem;
@@ -448,7 +434,6 @@ module PPU();
                 .OperandD_out(OperandD_out_exemem),
                 .rd_out(rd_out_exemem)
             );
-        
         //================================================================
         //Memory Writeback PPR
             wire rf_en_out_memwb;
@@ -470,13 +455,53 @@ module PPU();
             );
         //================================================================
         //Hazard & Forwarding Unit
-            
+            wire CU_MUX_CTRL_OUT;
+            wire IFID_LE_CTRL_OUT;
+            wire PC_LE_CTRL_OUT;
+            wire [1:0] ASelector;
+            wire [1:0] BSelector;
+            wire [1:0] DSelector;
+            HazardForwardingUnit HFU(
+                //INPUTS
+                .ra_in(ra_ifid),               
+                .rb_in(rb_ifid),               
+                .COND_EVAL_in(cond),       
+                .load_instruc_in(COND_EVAL_out),    
+
+                .rd_in_id(rd_ifid),            
+                .rd_in_exe(rd_out_idexe),          
+                .rd_in_mem(rd_out_exemem),          
+                .rd_in_wb(rd_out_memwb),            
+
+                .rf_en_exe(rf_en_out_idexe),           
+                .rf_en_mem(rf_en_out_exemem),           
+                .rf_en_wb(rf_en_out_memwb),            
+
+                //OUTPUTS
+                .CU_MUX_CTRL(CU_MUX_CTRL_OUT),         
+                .IFID_LE_CTRL(IFID_LE_CTRL_OUT),        
+                .PC_LE_CTRL(PC_LE_CTRL_OUT),          
+
+                .OperandA_MUX_CTRL(ASelector),   
+                .OperandB_MUX_CTRL(BSelector),   
+                .OperandD_MUX_CTRL(DSelector)    
+            );
+        //================================================================
+        //MUX for RF between CU and CUMUX
+            wire inbetweenCUCUMUX_MUX_OUT;
+            In2Out1MUX32 inbetweencucumux(
+                .In1(rf_en_cu_out),
+                .In2(1'b1),
+                .selector(bl_condition_out),
+
+                .out(inbetweenCUCUMUX_MUX_OUT)
+            );
 endmodule
 
 //==================MODULES===================//
     module HazardForwardingUnit(
-        input [31:0] rb_in,
         input [31:0] ra_in,
+        input [31:0] rb_in,
         input COND_EVAL_in,
         input load_instruc_in,
 
@@ -496,7 +521,43 @@ endmodule
         output OperandB_MUX_CTRL,
         output OperandD_MUX_CTRL,
         );
-    
+
+        always @(*) begin
+            // Default values
+            CU_MUX_CTRL = 1'b0;
+            IFID_LE_CTRL = 1'b1;
+            PC_LE_CTRL = 1'b1;
+            OperandA_MUX_CTRL = 2'b00; 
+            OperandB_MUX_CTRL = 2'b00; 
+            OperandD_MUX_CTRL = 2'b00; 
+
+            // Stall if there’s a data hazard with a load instruction
+            if (load_instruc_in && ((rd_in_exe == ra_in) || (rd_in_exe == rb_in))) begin
+                CU_MUX_CTRL = 1'b1;     
+                IFID_LE_CTRL = 1'b0;
+                PC_LE_CTRL = 1'b0;      
+            end
+
+            // Forwarding logic for OperandA
+            if (rf_en_exe && (rd_in_exe == ra_in)) begin
+                OperandA_MUX_CTRL = 2'b11; // Forward from Execute stage
+            end else if (rf_en_mem && (rd_in_mem == ra_in)) begin
+                OperandA_MUX_CTRL = 2'b01; // Forward from Memory stage
+            end else if (rf_en_wb && (rd_in_wb == ra_in)) begin
+                OperandA_MUX_CTRL = 2'b10; // Forward from Write-Back stage
+            end
+
+            // Forwarding logic for OperandB
+            if (rf_en_exe && (rd_in_exe == rb_in)) begin
+                OperandB_MUX_CTRL = 2'b11; // Forward from Execute stage
+            end else if (rf_en_mem && (rd_in_mem == rb_in)) begin
+                OperandB_MUX_CTRL = 2'b01; // Forward from Memory stage
+            end else if (rf_en_wb && (rd_in_wb == rb_in)) begin
+                OperandB_MUX_CTRL = 2'b10; // Forward from Write-Back stage
+            end
+
+            // Unsure of how to handle OperandD forwarding
+        end
     endmodule
 
     module ConditionHandler(
