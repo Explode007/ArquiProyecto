@@ -511,6 +511,18 @@ module PPU();
 
                 .out(inbetweenCUCUMUX_MUX_OUT)
             );
+        //================================================================
+        //Data Memory
+            wire [31:0] dataMem_Out; //This wire goes into the Mux in the MEM Stage
+            ram dataMem(
+                .DataOut(dataMem_Out),
+                .E(datamem_en_out_exemem),
+                .RW(rw_out_exemem),
+                .A(AluORNextPC_out_exemem),
+                .DataIn(OperandD_out_exemem),
+                .Size(size_out_exemem)
+            );
+        //================================================================
 endmodule
 
 //==================MODULES===================//
