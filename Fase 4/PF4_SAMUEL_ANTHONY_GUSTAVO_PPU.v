@@ -248,6 +248,21 @@ module PPU();
                 .A(PC_Out[7:0])
             );
         //================================================================
+        //Register File
+        register_file rf1(
+            .LE(rf_en_out)
+            .Clk(clk) 
+            .PC(next_pc_out_ifid)
+            .PW(dataWB_memwb)
+            .RD(rd_ifid)
+            .RB(rb_ifid)
+            .RA(ra_ifid)
+            .RW(rd_out)
+            .PD(Operand_D_OUT_RF)
+            .PB(Operand_B_OUT_RF)
+            .PA(Operand_A_OUT_RF)
+        );
+
         //Control Unit (Wires TO MUX)
             wire [1:0] am_cu_out;
             wire rf_en_cu_out;
@@ -1239,3 +1254,115 @@ endmodule
         end
     endmodule
 
+//Register File Modules
+//=========================================================================================================================
+
+module register_file(
+    input LE, Clk,
+    input [31:0] PC,PW,
+    input[3:0] RD,RB,RA,RW,
+    output[31:0] PD,PB,PA
+);
+
+wire [15:0] regnum;
+wire [31:0] Q0,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Q11,Q12,Q13,Q14,Q15;
+
+
+//declarando los modulos individuales las veces necesarias para hacer un three port register file y haciendo las 
+//conneciones necesarias
+decoder decoder1(regnum,LE,RW);
+
+register R0(regnum[0], Clk, PW, Q0);
+register R1(regnum[1], Clk, PW, Q1);
+register R2(regnum[2], Clk, PW, Q2);
+register R3(regnum[3], Clk, PW, Q3);
+register R4(regnum[4], Clk, PW, Q4);
+register R5(regnum[5], Clk, PW, Q5);
+register R6(regnum[6], Clk, PW, Q6);
+register R7(regnum[7], Clk, PW, Q7);
+register R8(regnum[8], Clk, PW, Q8);
+register R9(regnum[9], Clk, PW, Q9);
+register R10(regnum[10], Clk, PW, Q10);
+register R11(regnum[11], Clk, PW, Q11);
+register R12(regnum[12], Clk, PW, Q12);
+register R13(regnum[13], Clk, PW, Q13);
+register R14(regnum[14], Clk, PW, Q14);
+
+in16out1mux mux1(PA,RA,Q0,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Q11,Q12,Q13,Q14,PC);
+
+in16out1mux mux2(PB,RB,Q0,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Q11,Q12,Q13,Q14,PC);
+
+in16out1mux mux3(PD,RD,Q0,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Q11,Q12,Q13,Q14,PC);
+
+endmodule
+
+module decoder (
+    output reg[15:0] regnum,
+    input LE,
+    input [3:0] RW
+);
+
+always @(*)
+begin
+ if(LE == 1'b1)
+begin
+    case(RW)
+    4'b0000: regnum = 16'b0000000000000001;
+    4'b0001: regnum = 16'b0000000000000010;
+    4'b0010: regnum = 16'b0000000000000100; 
+    4'b0011: regnum = 16'b0000000000001000; 
+    4'b0100: regnum = 16'b0000000000010000;
+    4'b0101: regnum = 16'b0000000000100000; 
+    4'b0110: regnum = 16'b0000000001000000; 
+    4'b0111: regnum = 16'b0000000010000000; 
+    4'b1000: regnum = 16'b0000000100000000; 
+    4'b1001: regnum = 16'b0000001000000000; 
+    4'b1010: regnum = 16'b0000010000000000; 
+    4'b1011: regnum = 16'b0000100000000000; 
+    4'b1100: regnum = 16'b0001000000000000; 
+    4'b1101: regnum = 16'b0010000000000000; 
+    4'b1110: regnum = 16'b0100000000000000;     
+    4'b1111: regnum = 16'b1000000000000000;
+ endcase
+end else regnum = 16'b0000000000000000;
+end
+endmodule
+
+
+module in16out1mux(
+    output reg [31:0] Y, 
+    input [3:0] R,
+    input [31:0] Q0,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Q11,Q12,Q13,Q14,Q15
+);
+
+always @(*) begin
+case(R)
+4'b0000: Y = Q0;
+4'b0001: Y = Q1;
+4'b0010: Y = Q2;
+4'b0011: Y = Q3;
+4'b0100: Y = Q4;
+4'b0101: Y = Q5;
+4'b0110: Y = Q6;
+4'b0111: Y = Q7;
+4'b1000: Y = Q8;
+4'b1001: Y = Q9;
+4'b1010: Y = Q10;
+4'b1011: Y = Q11;
+4'b1100: Y = Q12;
+4'b1101: Y = Q13;
+4'b1110: Y = Q14;
+4'b1111: Y = Q15;
+endcase
+end
+endmodule
+
+module register(
+    input LE, Clk,
+    input [31:0] PW,
+    output reg[31:0] Q
+);
+
+always @(posedge Clk)
+    if(LE) Q <= PW;
+endmodule
