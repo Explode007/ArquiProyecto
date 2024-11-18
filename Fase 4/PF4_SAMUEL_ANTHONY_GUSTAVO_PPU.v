@@ -128,7 +128,7 @@ module PPU();
             wire [31:0] WBTORF_MUX_out;
             In2Out1MUX32 WBTORFMUX(
                 .In1(AluORNextPC_out_exemem),
-                .In2(mem_mux_out),
+                .In2(dataMem_Out), //Originally had mem_mux_out, changed it to dataMem_Out (as the PPU diagram says)
                 .selector(Load_out_exemem),
                 .out(WBTORF_MUX_out)
             )
