@@ -703,8 +703,12 @@ endmodule
     //TODO: Not sure how to make this piece
     module RotExtRELPC(
         input [24:0] reladdin;
-        output [31:0] reladdout;
+        output reg [31:0] reladdout;
         );
+        always@(*) begin
+    // Sign-extend the 24-bit offset to 32 bits
+    reladdout = {{8{reladdin[23]}}, reladdin} << 2;
+    end
     endmodule
     
     module Shifter_SignExtender (
