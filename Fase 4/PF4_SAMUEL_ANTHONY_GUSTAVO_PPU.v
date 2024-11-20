@@ -25,11 +25,10 @@ module PPU();
                 // Initialize the signals
                 LE <= 1'b1;
                 rst <= 1'b1;
-                s <= 1'b0;
+                
                 
                 // Do required timed changes
                 #3 rst <= 1'b0;
-                #32 s <= 1'b1;
                 
             end
 
@@ -42,14 +41,18 @@ module PPU();
             always @ (*) begin
 
                 case (cu_in)
+                    32'b11100011101000000101000000110100: instruction_name = "MOV R5, #52";
+                    32'b11100101100101010001000000000000: instruction_name = "LDR R1, [R5, #0]";
+                    32'b11100101110101010010000000000100: instruction_name = "LDRB R2, [R5, #4]";
+                    32'b11100101110101010011000000000101: instruction_name = "LDRB R3, [R5, #5] ";
+                    32'b11100001101100001010000000000001: instruction_name = "MOVS R10,R1 ";
+                    32'b01011010000000000000000000000100: instruction_name = "BPL +4 ";
+                    32'b11100000010000110110000000000010: instruction_name = "SUB R6,R3,R2";
                     32'b00000000000000000000000000000000: instruction_name = "NOP";
-                    32'b11100010000100010000000000000000: instruction_name = "ANDS R0,R1, #0";
-                    32'b11100000100000000101000110000011: instruction_name = "ADD R5,R0,R3, LSL #3";
-                    32'b11100111110100010010000000000000: instruction_name = "LDRB R2, [R1,R0]";
-                    32'b11100101100010100101000000000000: instruction_name = "STR R5, [R10, #0]";
-                    32'b00011010111111111111111111111101: instruction_name = "BNE -3";
-                    32'b11011011000000000000000000001001: instruction_name = "BLLE+9";
-                    32'b11100010000000010000000000000000: instruction_name = "AND R0,R1, #0";
+                    32'b11101010000000000000000000000100: instruction_name = "B +1";
+                    32'b11100000100000110110000000000010: instruction_name = "ADD R6,R3,R2";
+                    32'b11100101110001010110000000000110: instruction_name = "STRB R6, [R5, #6]";
+                    32'b11101010111111111111111111111111: instruction_name = "B -1";
                     default: instruction_name = "NULL";
                 endcase
 
@@ -57,16 +60,41 @@ module PPU();
 
 
         //======Monitor=======//
-            always begin
-                #1
+           //======Monitor PC and Instruction=======//
+                always @(*) begin
+                    #1;
+                    $monitor("Time = %t | PC = %d | Instruction: %s (%b)",
+                        $time, PC_Out, instruction_name, cu_in);
+                end
 
-                $monitor("Current Time Unit = %t\nIns. = %s %b\nPC = %d\nID_STAGE: AM = %b\tS-Bit = %b\tDATAMEM_EN = %b\tRW = %b\tSize = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\tBranch&Link = %b\tBranch = %b\nEX_STAGE: AM = %b\tS_Bit = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tRF_EN = %b\tALU_OP = %b\tLoad = %b\nMEM_STAGE: RF_EN = %b\tDATAMEM-EN = %b\tR/W = %b\tSIZE = %b\tLoad = %b\nWB_STAGE: RF_EN = %b\n", 
-                $time, instruction_name, cu_in, PC_Out, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out, //First Line
-                am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe, //Second Line
-                rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem, //Third Line
-                rf_en_out_memwb //Fourth Line
-                );
-            end
+            //======Monitor ID Stage=======//
+                always @(*) begin
+                    #1;
+                    $monitor("Time = %t | ID Stage: AM = %b | S-Bit = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | RF_EN = %b | ALU_OP = %b | Load = %b | Branch&Link = %b | Branch = %b",
+                        $time, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out);
+                end
+
+            //======Monitor EX Stage=======//
+                always @(*) begin
+                    #1;
+                    $monitor("Time = %t | EX Stage: AM = %b | S-Bit = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | RF_EN = %b | ALU_OP = %b | Load = %b",
+                        $time, am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
+                end
+
+            //======Monitor MEM Stage=======//
+                always @(*) begin
+                    #1;
+                    $monitor("Time = %t | MEM Stage: RF_EN = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | Load = %b",
+                        $time, rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem);
+                end
+
+            //======Monitor WB Stage=======//
+                always @(*) begin
+                    #1;
+                    $monitor("Time = %t | WB Stage: RF_EN = %b",
+                        $time, rf_en_out_memwb);
+                end
+
 
 
 
@@ -79,9 +107,9 @@ module PPU();
         //================================================================
         //RF Mux SaveNEXTPC
             wire [31:0] RF_MUX_SAVENEXTPC_OUT;
-            In2Out1MUX32(
-                .In1(rd_ifid),
-                .In2(4'b1110),
+            In2Out1MUX32 muxsavenextpc(
+                .In1({28'b0, rd_ifid}),
+                .In2({28'b0, 4'b1110}),
                 .selector(bl_condition_out),
                 .out(RF_MUX_SAVENEXTPC_OUT)
             );
@@ -97,7 +125,7 @@ module PPU();
                 .In4(NextPCORAALU_MUX_OUT),
 
                 .selector(ASelector),
-                .out(OperandA_MUX_OUT),
+                .out(OperandA_MUX_OUT)
             );
             In4Out1MUX32 OperandBMUX(
                 .In1(Operand_B_OUT_RF),
@@ -106,7 +134,7 @@ module PPU();
                 .In4(NextPCORAALU_MUX_OUT),
 
                 .selector(BSelector),
-                .out(OperandB_MUX_OUT),
+                .out(OperandB_MUX_OUT)
             );
             In4Out1MUX32 OperandDMUX(
                 .In1(Operand_D_OUT_RF),
@@ -115,7 +143,7 @@ module PPU();
                 .In4(NextPCORAALU_MUX_OUT),
 
                 .selector(DSelector),
-                .out(OperandD_MUX_OUT),
+                .out(OperandD_MUX_OUT)
             );
         //================================================================
         //WBTORF MUX
@@ -125,7 +153,7 @@ module PPU();
                 .In2(dataMem_Out), //Originally had mem_mux_out, changed it to dataMem_Out (as the PPU diagram says)
                 .selector(Load_out_exemem),
                 .out(WBTORF_MUX_out)
-            )
+            );
         //================================================================
         //NextPCORALU MUX
             wire [31:0] NextPCORAALU_MUX_OUT;
@@ -187,7 +215,7 @@ module PPU();
             );
         //================================================================
         //Program Status Register
-            wire Flags_out_PSR;
+            wire [31:0] Flags_out_PSR;
             ProgramStatusRegister PSR(
                 .S_bit_in(s_bit_out_idexe),
 
@@ -225,10 +253,10 @@ module PPU();
             );
         //================================================================
         //PC Adder 
-            wire [31:0] PC_adder_out
+            wire [31:0] PC_adder_out;
             adder PCAdder(
                 .Adder_IN1(PC_Out),
-                .Adder_IN2(32'b100),
+                .Adder_IN2(32'b00000000000000000000000000000100),
 
                 .Adder_OUT(PC_adder_out)
             );
@@ -241,20 +269,20 @@ module PPU();
             );
         //================================================================
         //Register File
-            wire [31:0] Oprand_A_OUT_RF;
+            wire [31:0] Operand_A_OUT_RF;
             wire [31:0] Operand_B_OUT_RF;
             wire [31:0] Operand_D_OUT_RF;
             register_file rf1(
-                .LE(rf_en_out)
-                .Clk(clk) 
-                .PC(next_pc_out_ifid)
-                .PW(dataWB_memwb)
-                .RD(rd_ifid)
-                .RB(rb_ifid)
-                .RA(ra_ifid)
-                .RW(rd_out)
-                .PD(Operand_D_OUT_RF)
-                .PB(Operand_B_OUT_RF)
+                .LE(rf_en_out),
+                .Clk(clk),
+                .PC(next_pc_out_ifid),
+                .PW(dataWB_memwb),
+                .RD(rd_ifid),
+                .RB(rb_ifid),
+                .RA(ra_ifid),
+                .RW(rd_out),
+                .PD(Operand_D_OUT_RF),
+                .PB(Operand_B_OUT_RF),
                 .PA(Operand_A_OUT_RF)
             );
         //================================================================
@@ -302,7 +330,7 @@ module PPU();
                 
                 //INPUTS
                 .am_in(am_cu_out),
-                .rf_en_in(inbetweenCUCUMUX_MUX_OUT),
+                .rf_en_in(inbetweenCUCUMUX_MUX_OUT[0]),
                 .alu_op_in(alu_op_cu_out),
                 .Load_in(Load_cu_out),
                 .branch_in(branch_cu_out),
@@ -328,7 +356,7 @@ module PPU();
         //Fetch Decode PPR
             wire [3:0] instr_cond_ifid;
             wire [3:0] ra_ifid, rd_ifid, rb_ifid;
-            wire [12:0] immediate_ifid;
+            wire [11:0] immediate_ifid;
             wire [23:0] branch_offset_ifid;
             wire [31:0] next_pc_out_ifid;
             wire [31:0] cu_in;
@@ -342,14 +370,14 @@ module PPU();
                 .next_pc_in(PC_adder_out),
                 
                 //OUTPUTS
-                .instr_cond(instr_cond),
+                .instr_cond(instr_cond_ifid),
                 .branch_offset(branch_offset_ifid),
                 .ra(ra_ifid),
                 .rb(rb_ifid),
                 .rd(rd_ifid),
                 .immediate(immediate_ifid),
                 .next_pc_out(next_pc_out_ifid),
-                .cu_in(cu_in),
+                .cu_in(cu_in)
             );
         //================================================================
         //Decode Execute PPR
@@ -365,8 +393,8 @@ module PPU();
             wire [31:0] OperandA_out_idexe;
             wire [31:0] OperandB_out_idexe;
             wire [31:0] OperandD_out_idexe;
-            wire [12:0] immediate_out_idexe;
-            wire [31:0] rd_out_idexe;
+            wire [11:0] immediate_out_idexe;
+            wire [3:0] rd_out_idexe;
             wire [3:0] instr_cond_idexe;
 
             
@@ -384,12 +412,12 @@ module PPU();
                 .am_in(am_out_cumux),
                 .alu_op_in(alu_op_out_cumux),
                 .instr_cond_in(instr_cond_ifid),
-                .next_pc_in(next_pc_out_ifid)
+                .next_pc_in(next_pc_out_ifid),
                 .operand_a_in(OperandA_MUX_OUT),
                 .operand_b_in(OperandB_MUX_OUT),
                 .operand_d_in(OperandD_MUX_OUT),
                 .immediate_in(immediate_ifid),
-                .rd_in(RF_MUX_SAVENEXTPC_OUT),
+                .rd_in(RF_MUX_SAVENEXTPC_OUT[3:0]),
                 .NEXTORALU_ctrl_in(bl_condition_out),
 
                 //OUTPUTS
@@ -398,7 +426,7 @@ module PPU();
                 .datamem_en_out(datamem_en_out_idexe),
                 .readwrite_out(rw_out_idexe),
                 .size_out(size_out_idexe),
-                .load_instruction_out(Load_out_idexe)
+                .load_instruction_out(Load_out_idexe),
                 .am_out(am_out_idexe),
                 .alu_op_out(alu_op_out_idexe),
                 .instr_cond_out(instr_cond_idexe),
@@ -406,9 +434,9 @@ module PPU();
                 .operand_a_out(OperandA_out_idexe),
                 .operand_b_out(OperandB_out_idexe),
                 .operand_d_out(OperandD_out_idexe),
-                .immediate_out(immediate_out_idexe;),
+                .immediate_out(immediate_out_idexe),
                 .rd_out(rd_out_idexe),
-                .NEXTORALU_ctrl_out(NextPCORALU_CTRL_OUT),
+                .NEXTORALU_ctrl_out(NextPCORALU_CTRL_OUT)
             );
         //================================================================
         //Execute Memory PPR
@@ -432,7 +460,7 @@ module PPU();
                 .load_instruction_in(Load_out_idexe),
                 .AluORNextPC_in(NextPCORAALU_MUX_OUT), 
                 .OperandD_in(OperandD_out_idexe),
-                .rd_in(rd_out_idexe)
+                .rd_in(rd_out_idexe),
                 
                 //OUTPUTS
                 .rf_en_out(rf_en_out_exemem),
@@ -461,7 +489,7 @@ module PPU();
                 //OUTPUTS
                 .rf_en_out(rf_en_out_memwb),
                 .rd_out(rd_out_memwb),
-                .mem_mux_out(dataWB_memwb), //TODO: Goes to MUX WB TO RF
+                .mem_mux_out(dataWB_memwb) //TODO: Goes to MUX WB TO RF
             );
         //================================================================
         //Hazard & Forwarding Unit
@@ -473,15 +501,15 @@ module PPU();
             wire [1:0] DSelector;
             HazardForwardingUnit HFU(
                 //INPUTS
-                .ra_in(ra_ifid),               
-                .rb_in(rb_ifid),               
+                .ra_in({28'b0, ra_ifid}),               
+                .rb_in({28'b0, rb_ifid}),               
                 .COND_EVAL_in(cond),       
                 .load_instruc_in(COND_EVAL_out),    
 
-                .rd_in_id(rd_ifid),            
-                .rd_in_exe(rd_out_idexe),          
-                .rd_in_mem(rd_out_exemem),          
-                .rd_in_wb(rd_out_memwb),            
+                .rd_in_id({28'b0, rd_ifid}),            
+                .rd_in_exe({28'b0, rd_out_idexe}),          
+                .rd_in_mem({28'b0, rd_out_exemem}),          
+                .rd_in_wb({28'b0, rd_out_memwb}),            
 
                 .rf_en_exe(rf_en_out_idexe),           
                 .rf_en_mem(rf_en_out_exemem),           
@@ -498,10 +526,10 @@ module PPU();
             );
         //================================================================
         //MUX for RF between CU and CUMUX
-            wire inbetweenCUCUMUX_MUX_OUT;
+            wire [31:0] inbetweenCUCUMUX_MUX_OUT;
             In2Out1MUX32 inbetweencucumux(
-                .In1(rf_en_cu_out),
-                .In2(1'b1),
+                .In1({31'b0, rf_en_cu_out}),
+                .In2({31'b0, 1'b1}),
                 .selector(bl_condition_out),
 
                 .out(inbetweenCUCUMUX_MUX_OUT)
@@ -535,12 +563,12 @@ endmodule
         input rf_en_mem,
         input rf_en_wb,
 
-        output CU_MUX_CTRL,
-        output IFID_LE_CTRL,
-        output PC_LE_CTRL,
-        output OperandA_MUX_CTRL,
-        output OperandB_MUX_CTRL,
-        output OperandD_MUX_CTRL,
+        output reg CU_MUX_CTRL,
+        output reg IFID_LE_CTRL,
+        output reg PC_LE_CTRL,
+        output reg [1:0] OperandA_MUX_CTRL,
+        output reg [1:0] OperandB_MUX_CTRL,
+        output reg [1:0] OperandD_MUX_CTRL
         );
 
         always @(*) begin
@@ -566,6 +594,8 @@ endmodule
                 OperandA_MUX_CTRL = 2'b01; // Forward from Memory stage
             end else if (rf_en_wb && (rd_in_wb == ra_in)) begin
                 OperandA_MUX_CTRL = 2'b10; // Forward from Write-Back stage
+            end else begin
+                OperandA_MUX_CTRL = 2'b00;
             end
 
             // Forwarding logic for OperandB
@@ -575,9 +605,20 @@ endmodule
                 OperandB_MUX_CTRL = 2'b01; // Forward from Memory stage
             end else if (rf_en_wb && (rd_in_wb == rb_in)) begin
                 OperandB_MUX_CTRL = 2'b10; // Forward from Write-Back stage
+            end else begin
+                OperandB_MUX_CTRL = 2'b00;
             end
 
-            // Unsure of how to handle OperandD forwarding
+            // Forwarding logic for OperandD
+            if (rf_en_exe && (rd_in_exe == rd_in_id)) begin
+                OperandD_MUX_CTRL = 2'b11; // Forward from EXE stage
+            end else if (rf_en_mem && (rd_in_mem == rd_in_id)) begin
+                OperandD_MUX_CTRL = 2'b01; // Forward from MEM stage
+            end else if (rf_en_wb && (rd_in_wb == rd_in_id)) begin
+                OperandD_MUX_CTRL = 2'b10; // Forward from WB stage
+            end else begin
+                OperandD_MUX_CTRL = 2'b00;
+            end
         end
     endmodule
 
@@ -669,10 +710,10 @@ endmodule
     endmodule
 
     module In2Out1MUX32(
-        input [31:0] In1, In2;
-        input selector;
+        input [31:0] In1, In2,
+        input selector,
 
-        output [31:0] out;
+        output reg [31:0] out
         );  
         always @(*) begin
             if (selector) begin
@@ -684,10 +725,10 @@ endmodule
     endmodule
     
     module In4Out1MUX32(
-        input [31:0] In1, In2, In3, In4;
-        input [1:0] selector;
+        input [31:0] In1, In2, In3, In4,
+        input [1:0] selector,
 
-        output [31:0] out;
+        output reg [31:0] out
         );  
         always @(*) begin
             case (selector)
@@ -702,8 +743,8 @@ endmodule
 
     //TODO: Not sure how to make this piece
     module RotExtRELPC(
-        input [24:0] reladdin;
-        output reg [31:0] reladdout;
+        input [24:0] reladdin,
+        output reg [31:0] reladdout
         );
         always@(*) begin
     // Sign-extend the 24-bit offset to 32 bits
@@ -1130,7 +1171,7 @@ endmodule
                     rd <= instruction[15:12];
                     rb <= instruction[3:0];
                     immediate <= instruction[11:0];
-                    next_pc_out <= next_pc;
+                    next_pc_out <= next_pc_in;
                     cu_in <= instruction;
                 end
             end
@@ -1149,14 +1190,14 @@ endmodule
         input [3:0] rd_in,
         input NEXTORALU_ctrl_in,
 
-        output reg rf_en_out, s_bit_out, datamem_en_out, readwrite_out, size_out, load_instruction_out
+        output reg rf_en_out, s_bit_out, datamem_en_out, readwrite_out, size_out, load_instruction_out,
         output reg [1:0] am_out,
         output reg [3:0] alu_op_out,
         output reg [3:0] instr_cond_out,
         output reg [31:0] next_pc_out, operand_a_out, operand_b_out, operand_d_out,
         output reg [11:0] immediate_out,
         output reg [3:0] rd_out,
-        input NEXTORALU_ctrl_out,
+        output reg NEXTORALU_ctrl_out
         );
 
         always @ (posedge clk) begin 
@@ -1243,9 +1284,9 @@ endmodule
         input [3:0] rd_in,
         input [31:0] mem_mux_in,
         
-        output reg rf_en_out
+        output reg rf_en_out,
         output reg [31:0] mem_mux_out,
-        output reg [3:0] rd_out,
+        output reg [3:0] rd_out
         );
 
         always @ (posedge clk)
@@ -1265,8 +1306,8 @@ endmodule
     module register_file(
         input LE, Clk,
         input [31:0] PC,PW,
-        input[3:0] RD,RB,RA,RW,
-        output[31:0] PD,PB,PA
+        input [3:0] RD,RB,RA,RW,
+        output [31:0] PD,PB,PA
         );
 
         wire [15:0] regnum;
