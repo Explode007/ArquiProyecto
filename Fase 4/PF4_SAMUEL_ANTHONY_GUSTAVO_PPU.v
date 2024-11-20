@@ -7,6 +7,12 @@ module PPU();
                 clk <= 0;
                 #2 clk <= ~clk;
             end
+
+            always begin
+                //monitor clock
+                monclk <= 0;
+                #1 monclk <= ~monclk;
+            end
             //Preload
             integer fi, code;
             reg [7:0] data;
@@ -33,7 +39,7 @@ module PPU();
             end
 
             initial begin
-                #40 $finish; //41 so it can print out 40
+                #50 $finish; //41 so it can print out 40
             end
 
             reg [167:0] instruction_name;
@@ -60,40 +66,19 @@ module PPU();
 
 
         //======Monitor=======//
-           //======Monitor PC and Instruction=======//
-                always @(*) begin
-                    #1;
-                    $monitor("Time = %t | PC = %d | Instruction: %s (%b)",
-                        $time, PC_Out, instruction_name, cu_in);
-                end
+        always @(posedge monclk) begin
+            $display("Time = %t | PC = %d | Instruction: %s (%b)", $time, PC_Out, instruction_name, cu_in);
+            $display("ID Stage: AM = %b | S-Bit = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | RF_EN = %b | ALU_OP = %b | Load = %b | Branch&Link = %b | Branch = %b",
+                am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out);
+            $display("EX Stage: AM = %b | S-Bit = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | RF_EN = %b | ALU_OP = %b | Load = %b",
+                am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
+            $display("MEM Stage: RF_EN = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | Load = %b",
+                rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem);
+            $display("WB Stage: RF_EN = %b", rf_en_out_memwb);
+        end
 
-            //======Monitor ID Stage=======//
-                always @(*) begin
-                    #1;
-                    $monitor("Time = %t | ID Stage: AM = %b | S-Bit = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | RF_EN = %b | ALU_OP = %b | Load = %b | Branch&Link = %b | Branch = %b",
-                        $time, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out);
-                end
 
-            //======Monitor EX Stage=======//
-                always @(*) begin
-                    #1;
-                    $monitor("Time = %t | EX Stage: AM = %b | S-Bit = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | RF_EN = %b | ALU_OP = %b | Load = %b",
-                        $time, am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
-                end
 
-            //======Monitor MEM Stage=======//
-                always @(*) begin
-                    #1;
-                    $monitor("Time = %t | MEM Stage: RF_EN = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | Load = %b",
-                        $time, rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem);
-                end
-
-            //======Monitor WB Stage=======//
-                always @(*) begin
-                    #1;
-                    $monitor("Time = %t | WB Stage: RF_EN = %b",
-                        $time, rf_en_out_memwb);
-                end
 
 
 
@@ -104,6 +89,7 @@ module PPU();
         reg LE;
         reg rst;
         reg clk;
+        reg monclk;
         //================================================================
         //RF Mux SaveNEXTPC
             wire [31:0] RF_MUX_SAVENEXTPC_OUT;
