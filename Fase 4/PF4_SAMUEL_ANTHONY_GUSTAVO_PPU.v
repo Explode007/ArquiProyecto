@@ -280,7 +280,7 @@ module PPU();
                 .RD(rd_ifid),
                 .RB(rb_ifid),
                 .RA(ra_ifid),
-                .RW(rd_out),
+                .RW(rd_out_memwb),
                 .PD(Operand_D_OUT_RF),
                 .PB(Operand_B_OUT_RF),
                 .PA(Operand_A_OUT_RF)
