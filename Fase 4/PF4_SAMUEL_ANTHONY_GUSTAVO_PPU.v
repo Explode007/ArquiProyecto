@@ -513,7 +513,7 @@ module PPU();
                 .DataOut(dataMem_Out),
                 .E(datamem_en_out_exemem),
                 .RW(rw_out_exemem),
-                .A(AluORNextPC_out_exemem),
+                .A(AluORNextPC_out_exemem[8:0]),
                 .DataIn(OperandD_out_exemem),
                 .Size(size_out_exemem)
             );
