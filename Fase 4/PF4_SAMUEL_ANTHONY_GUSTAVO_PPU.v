@@ -18,15 +18,21 @@ module PPU();
             reg [7:0] data;
             reg [8:0] Address;
             initial begin
+
+//================================= ⌄ Precharge Section ⌄ =================================//
+
                 // Open and read the test code file
                 fi = $fopen("precharge.txt", "r");
                 Address = 0;
                 while (!$feof(fi)) begin
                     code = $fscanf(fi, "%b", data);  // Read binary instructions
                     insMem.Mem[Address] = data;      // Load instructions into ROM
+                    dataMem.Mem[Address] = data;     // Load instructions into RAM
                     Address = Address + 1;
                 end
                 $fclose(fi);  // Close the file
+
+//=========================================================================================//
 
                 // Initialize the signals
                 LE <= 1'b1;
