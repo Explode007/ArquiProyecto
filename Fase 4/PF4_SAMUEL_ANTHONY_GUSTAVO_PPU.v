@@ -743,7 +743,7 @@ endmodule
     //TODO: Not sure how to make this piece
     module RotExtRELPC(
         input [23:0] reladdin,
-        output reg [31:0] reladdout
+        output reg signed [31:0] reladdout
         );
         always@(*) begin
     // Sign-extend the 24-bit offset to 32 bits
