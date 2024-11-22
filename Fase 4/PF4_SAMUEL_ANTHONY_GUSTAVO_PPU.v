@@ -72,18 +72,50 @@ module PPU();
 
 
         //======Monitor=======//
+        integer i;
         always @(posedge monclk) begin
-            $display("Time = %t | PC = %d | Instruction: %s (%b)", $time, PC_Out, instruction_name, cu_in);
-            $display("ID Stage: AM = %b | S-Bit = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | RF_EN = %b | ALU_OP = %b | Load = %b | Branch&Link = %b | Branch = %b",
-                am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out);
-            $display("EX Stage: AM = %b | S-Bit = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | RF_EN = %b | ALU_OP = %b | Load = %b",
-                am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
-            $display("MEM Stage: RF_EN = %b | DATAMEM_EN = %b | R/W = %b | Size = %b | Load = %b",
+            $display("-------------------------------------------------------------------------------------------");
+            $display("| Time    | PC    | Instruction  ");
+            $display("-------------------------------------------------------------------------------------------");
+            $display("| %5t | %5d | %-23s |", 
+                $time, PC_Out, instruction_name);
+            $display("-------------------------------------------------------------------------------------------");
+            $display("| ID Stage | PA: %d PB: %d PD: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | Branch&Link: %b | Branch: %b |",
+                Operand_A_OUT_RF, Operand_B_OUT_RF, Operand_D_OUT_RF, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out);
+            $display("| EX Stage | Operand A: %d Operand B: %d Operand D: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b |",
+                OperandA_out_idexe, OperandB_out_idexe, OperandD_out_idexe, am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
+            $display("| MEM Stage | RF_EN: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | Load: %b |",
                 rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem);
-            $display("WB Stage: RF_EN = %b", rf_en_out_memwb);
-        end
+            $display("| WB Stage | RF_EN: %b |", rf_en_out_memwb);
+            $display("-------------------------------------------------------------------------------------------");
 
+            $display("-------------------------------------------------------------------------------------------");
+            $display("Register Values (in decimal):");
+            $display("R1 = %d | R2 = %d | R3 = %d | R5 = %d", 
+                rf1.Q1, 
+                rf1.Q2,
+                rf1.Q3,
+                rf1.Q5 
+            );
+            $display("-------------------------------------------------------------------------------------------");
 
+            $display("-------------------------------------------------------------------------------------------");
+            $display("| Address Range |                                  Values                                 |");
+            $display("-------------------------------------------------------------------------------------------");
+
+                for (i = 0; i < 256; i = i + 8) begin
+                    $write("| %03d - %03d     | ", i, i + 7);  // Address range
+
+                    // Print values for 8 consecutive memory locations
+                    $write("%d %d %d %d %d %d %d %d", 
+                        dataMem.Mem[i], dataMem.Mem[i+1], dataMem.Mem[i+2], dataMem.Mem[i+3],
+                        dataMem.Mem[i+4], dataMem.Mem[i+5], dataMem.Mem[i+6], dataMem.Mem[i+7]);
+
+                    $display(" |");  // Close the table row
+                end
+
+            $display("---------------------------------------------------");
+        end 
 
 
 
