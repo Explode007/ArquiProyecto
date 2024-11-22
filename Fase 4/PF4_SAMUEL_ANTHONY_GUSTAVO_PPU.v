@@ -228,8 +228,8 @@ module PPU();
         //BranchMUX
             wire [31:0] BranchMux_out; 
             In2Out1MUX32 BMux(
-                .In1(PC_adder_out),
-                .In2(BranchRel_out),
+                .In1(BranchRel_out),
+                .In2(PC_adder_out),
                 .selector(TA_Ctrl_out),
 
                 .out(BranchMux_out)
@@ -745,10 +745,12 @@ endmodule
         input [23:0] reladdin,
         output reg signed [31:0] reladdout
         );
-        always@(*) begin
-    // Sign-extend the 24-bit offset to 32 bits
-    reladdout = {{8{reladdin[23]}}, reladdin} << 2;
-    end
+
+        
+    //     always@(*) begin
+    // // Sign-extend the 24-bit offset to 32 bits
+    // reladdout = {{8{reladdin[23]}}, reladdin} << 2;
+    // end
     endmodule
     
     module Shifter_SignExtender (
