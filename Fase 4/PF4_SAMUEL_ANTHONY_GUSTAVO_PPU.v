@@ -239,10 +239,17 @@ module PPU();
             wire [31:0] BranchRel_out;
             adder RelAdder(
                 .Adder_IN1(PC_adder_out),
-                .Adder_IN2(), //TODO: Need to input the rotated thing here
+                .Adder_IN2(rot_ext_output), //TODO: Need to input the rotated thing here
 
                 .Adder_OUT(BranchRel_out)
             );
+        //================================================================
+        //Rotate 4x & Sign Extension
+        wire signed [31:0] rot_ext_output;
+        RotExtRELPC rot_ext(
+            .reladdin(branch_offset_ifid),
+            .reladdout(rot_ext_output)
+        );
         //================================================================
         //PC Adder 
             wire [31:0] PC_adder_out;
@@ -735,7 +742,7 @@ endmodule
 
     //TODO: Not sure how to make this piece
     module RotExtRELPC(
-        input [24:0] reladdin,
+        input [23:0] reladdin,
         output reg [31:0] reladdout
         );
         always@(*) begin
@@ -865,9 +872,9 @@ endmodule
 
     module adder(
         output reg [31:0] Adder_OUT,
-        input[31:0] Adder_IN1, Adder_IN2
+        input signed [31:0] Adder_IN1, Adder_IN2
         );
-        always@(Adder_IN1 or Adder_IN2) 
+        always@(*) 
             begin
                 Adder_OUT = Adder_IN1 + Adder_IN2;
             end
