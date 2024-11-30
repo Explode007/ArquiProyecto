@@ -74,6 +74,10 @@ module PPU();
         //======Monitor=======//
         integer i;
         always @(posedge monclk) begin
+            $display("----------------------------------DEBUG SECTION---------------------------------------");
+            $display("| PW: %d | RW: %d | MUXWBTORF: %d | ALUOUT: %d |",
+                    dataWB_memwb, rd_out_memwb, WBTORF_MUX_out, Alu_out
+                    );
             $display("-------------------------------------------------------------------------------------------");
             $display("| Time    | PC    | Instruction  ");
             $display("-------------------------------------------------------------------------------------------");
@@ -82,7 +86,7 @@ module PPU();
             $display("-------------------------------------------------------------------------------------------");
             $display("| ID Stage | PA: %d PB: %d PD: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | Branch&Link: %b | Branch: %b |",
                 Operand_A_OUT_RF, Operand_B_OUT_RF, Operand_D_OUT_RF, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out);
-            $display("| EX Stage | Operand A: %d Operand B: %d Operand D: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b |",
+            $display("| EX Stage | Operand A: %d | Operand B: %d | Operand D: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b |",
                 OperandA_out_idexe, OperandB_out_idexe, OperandD_out_idexe, am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
             $display("| MEM Stage | RF_EN: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | Load: %b |",
                 rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem);
@@ -92,29 +96,29 @@ module PPU();
             $display("-------------------------------------------------------------------------------------------");
             $display("Register Values (in decimal):");
             $display("R1 = %d | R2 = %d | R3 = %d | R5 = %d", 
-                rf1.Q1, 
-                rf1.Q2,
-                rf1.Q3,
-                rf1.Q5 
+                monQ1, 
+                monQ2,
+                monQ3,
+                monQ5 
             );
-            $display("-------------------------------------------------------------------------------------------");
+            // $display("-------------------------------------------------------------------------------------------");
 
-            $display("-------------------------------------------------------------------------------------------");
-            $display("| Address Range |                                  Values                                 |");
-            $display("-------------------------------------------------------------------------------------------");
+            // $display("-------------------------------------------------------------------------------------------");
+            // $display("| Address Range |                                  Values                                 |");
+            // $display("-------------------------------------------------------------------------------------------");
 
-                for (i = 0; i < 256; i = i + 8) begin
-                    $write("| %03d - %03d     | ", i, i + 7);  // Address range
+            //     for (i = 0; i < 256; i = i + 8) begin
+            //         $write("| %03d - %03d     | ", i, i + 7);  // Address range
 
-                    // Print values for 8 consecutive memory locations
-                    $write("%d %d %d %d %d %d %d %d", 
-                        dataMem.Mem[i], dataMem.Mem[i+1], dataMem.Mem[i+2], dataMem.Mem[i+3],
-                        dataMem.Mem[i+4], dataMem.Mem[i+5], dataMem.Mem[i+6], dataMem.Mem[i+7]);
+            //         // Print values for 8 consecutive memory locations
+            //         $write("%d %d %d %d %d %d %d %d", 
+            //             dataMem.Mem[i], dataMem.Mem[i+1], dataMem.Mem[i+2], dataMem.Mem[i+3],
+            //             dataMem.Mem[i+4], dataMem.Mem[i+5], dataMem.Mem[i+6], dataMem.Mem[i+7]);
 
-                    $display(" |");  // Close the table row
-                end
+            //         $display(" |");  // Close the table row
+            //     end
 
-            $display("---------------------------------------------------");
+            // $display("---------------------------------------------------");
         end 
 
 
@@ -132,8 +136,8 @@ module PPU();
         //RF Mux SaveNEXTPC
             wire [31:0] RF_MUX_SAVENEXTPC_OUT;
             In2Out1MUX32 muxsavenextpc(
-                .In1({28'b0, rd_ifid}),
-                .In2({28'b0, 4'b1110}),
+                .In1({28'b0, 4'b1110}),
+                .In2({28'b0, rd_ifid}),
                 .selector(bl_condition_out),
                 .out(RF_MUX_SAVENEXTPC_OUT)
             );
@@ -277,11 +281,11 @@ module PPU();
             );
         //================================================================
         //Rotate 4x & Sign Extension
-        wire signed [31:0] rot_ext_output;
-        RotExtRELPC rot_ext(
-            .reladdin(branch_offset_ifid),
-            .reladdout(rot_ext_output)
-        );
+            wire signed [31:0] rot_ext_output;
+            RotExtRELPC rot_ext(
+                .reladdin(branch_offset_ifid),
+                .reladdout(rot_ext_output)
+            );
         //================================================================
         //PC Adder 
             wire [31:0] PC_adder_out;
@@ -303,6 +307,7 @@ module PPU();
             wire [31:0] Operand_A_OUT_RF;
             wire [31:0] Operand_B_OUT_RF;
             wire [31:0] Operand_D_OUT_RF;
+            wire [31:0] monQ0,monQ1,monQ2,monQ3,monQ4,monQ5,monQ6,monQ7,monQ8,monQ9,monQ10,monQ11,monQ12,monQ13,monQ14,monQ15;
             register_file rf1(
                 .LE(rf_en_out),
                 .Clk(clk),
@@ -314,7 +319,23 @@ module PPU();
                 .RW(rd_out_memwb),
                 .PD(Operand_D_OUT_RF),
                 .PB(Operand_B_OUT_RF),
-                .PA(Operand_A_OUT_RF)
+                .PA(Operand_A_OUT_RF),
+                .monQ0(monQ0),
+                .monQ1(monQ1),
+                .monQ2(monQ2),
+                .monQ3(monQ3),
+                .monQ4(monQ4),
+                .monQ5(monQ5),
+                .monQ6(monQ6),
+                .monQ7(monQ7),
+                .monQ8(monQ8),
+                .monQ9(monQ9),
+                .monQ10(monQ10),
+                .monQ11(monQ11),
+                .monQ12(monQ12),
+                .monQ13(monQ13),
+                .monQ14(monQ14),
+                .monQ15(monQ15)
             );
         //================================================================
         //Control Unit (Wires TO MUX)
@@ -520,7 +541,7 @@ module PPU();
                 //OUTPUTS
                 .rf_en_out(rf_en_out_memwb),
                 .rd_out(rd_out_memwb),
-                .mem_mux_out(dataWB_memwb) //TODO: Goes to MUX WB TO RF
+                .mem_mux_out(dataWB_memwb)
             );
         //================================================================
         //Hazard & Forwarding Unit
@@ -604,51 +625,51 @@ endmodule
 
         always @(*) begin
             // Default values
-            CU_MUX_CTRL = 1'b0;
-            IFID_LE_CTRL = 1'b1;
-            PC_LE_CTRL = 1'b1;
-            OperandA_MUX_CTRL = 2'b00; 
-            OperandB_MUX_CTRL = 2'b00; 
-            OperandD_MUX_CTRL = 2'b00; 
+            CU_MUX_CTRL <= 1'b0;
+            IFID_LE_CTRL <= 1'b1;
+            PC_LE_CTRL <= 1'b1;
+            OperandA_MUX_CTRL <= 2'b00; 
+            OperandB_MUX_CTRL <= 2'b00; 
+            OperandD_MUX_CTRL <= 2'b00; 
 
             // Stall if there’s a data hazard with a load instruction
             if (load_instruc_in && ((rd_in_exe == ra_in) || (rd_in_exe == rb_in))) begin
-                CU_MUX_CTRL = 1'b1;     
-                IFID_LE_CTRL = 1'b0;
-                PC_LE_CTRL = 1'b0;      
+                CU_MUX_CTRL <= 1'b1;     
+                IFID_LE_CTRL <= 1'b0;
+                PC_LE_CTRL <= 1'b0;      
             end
 
             // Forwarding logic for OperandA
             if (rf_en_exe && (rd_in_exe == ra_in)) begin
-                OperandA_MUX_CTRL = 2'b11; // Forward from Execute stage
+                OperandA_MUX_CTRL <= 2'b11; // Forward from Execute stage
             end else if (rf_en_mem && (rd_in_mem == ra_in)) begin
-                OperandA_MUX_CTRL = 2'b01; // Forward from Memory stage
+                OperandA_MUX_CTRL <= 2'b01; // Forward from Memory stage
             end else if (rf_en_wb && (rd_in_wb == ra_in)) begin
-                OperandA_MUX_CTRL = 2'b10; // Forward from Write-Back stage
+                OperandA_MUX_CTRL <= 2'b10; // Forward from Write-Back stage
             end else begin
-                OperandA_MUX_CTRL = 2'b00;
+                OperandA_MUX_CTRL <= 2'b00;
             end
 
             // Forwarding logic for OperandB
             if (rf_en_exe && (rd_in_exe == rb_in)) begin
-                OperandB_MUX_CTRL = 2'b11; // Forward from Execute stage
+                OperandB_MUX_CTRL <= 2'b11; // Forward from Execute stage
             end else if (rf_en_mem && (rd_in_mem == rb_in)) begin
-                OperandB_MUX_CTRL = 2'b01; // Forward from Memory stage
+                OperandB_MUX_CTRL <= 2'b01; // Forward from Memory stage
             end else if (rf_en_wb && (rd_in_wb == rb_in)) begin
-                OperandB_MUX_CTRL = 2'b10; // Forward from Write-Back stage
+                OperandB_MUX_CTRL <= 2'b10; // Forward from Write-Back stage
             end else begin
-                OperandB_MUX_CTRL = 2'b00;
+                OperandB_MUX_CTRL <= 2'b00;
             end
 
             // Forwarding logic for OperandD
             if (rf_en_exe && (rd_in_exe == rd_in_id)) begin
-                OperandD_MUX_CTRL = 2'b11; // Forward from EXE stage
+                OperandD_MUX_CTRL <= 2'b11; // Forward from EXE stage
             end else if (rf_en_mem && (rd_in_mem == rd_in_id)) begin
-                OperandD_MUX_CTRL = 2'b01; // Forward from MEM stage
+                OperandD_MUX_CTRL <= 2'b01; // Forward from MEM stage
             end else if (rf_en_wb && (rd_in_wb == rd_in_id)) begin
-                OperandD_MUX_CTRL = 2'b10; // Forward from WB stage
+                OperandD_MUX_CTRL <= 2'b10; // Forward from WB stage
             end else begin
-                OperandD_MUX_CTRL = 2'b00;
+                OperandD_MUX_CTRL <= 2'b00;
             end
         end
     endmodule
@@ -772,7 +793,6 @@ endmodule
         end
     endmodule
 
-    //TODO: Not sure how to make this piece
     module RotExtRELPC(
         input [23:0] reladdin,
         output reg signed [31:0] reladdout
@@ -961,8 +981,8 @@ endmodule
         parameter OP_AND = 4'b0110;
         parameter OP_OR  = 4'b0111;
         parameter OP_XOR = 4'b1000;
-        parameter OP_A_TRANSFER = 4'b1001;
-        parameter OP_B_TRANSFER = 4'b1010;
+        parameter OP_A_TRANSFER = 4'b1001; //A Transfer is a register value?
+        parameter OP_B_TRANSFER = 4'b1010; //B Transfer is a shift value?
         parameter OP_NOT_B = 4'b1011;
         parameter OP_A_AND_NOT_B = 4'b1100;
 
@@ -1338,38 +1358,58 @@ endmodule
         input LE, Clk,
         input [31:0] PC,PW,
         input [3:0] RD,RB,RA,RW,
-        output [31:0] PD,PB,PA
+        output [31:0] PD,PB,PA,
+        output reg [31:0] monQ0,monQ1,monQ2,monQ3,monQ4,monQ5,monQ6,monQ7,monQ8,monQ9,monQ10,monQ11,monQ12,monQ13,monQ14,monQ15
         );
 
         wire [15:0] regnum;
         wire [31:0] Q0,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Q11,Q12,Q13,Q14,Q15;
 
-
         //declarando los modulos individuales las veces necesarias para hacer un three port register file y haciendo las 
         //conneciones necesarias
-        decoder decoder1(regnum,LE,RW);
+        decoder decoder1(.regnum(regnum),.LE(LE),.RW(RW));
 
-        register R0(regnum[0], Clk, PW, Q0);
-        register R1(regnum[1], Clk, PW, Q1);
-        register R2(regnum[2], Clk, PW, Q2);
-        register R3(regnum[3], Clk, PW, Q3);
-        register R4(regnum[4], Clk, PW, Q4);
-        register R5(regnum[5], Clk, PW, Q5);
-        register R6(regnum[6], Clk, PW, Q6);
-        register R7(regnum[7], Clk, PW, Q7);
-        register R8(regnum[8], Clk, PW, Q8);
-        register R9(regnum[9], Clk, PW, Q9);
-        register R10(regnum[10], Clk, PW, Q10);
-        register R11(regnum[11], Clk, PW, Q11);
-        register R12(regnum[12], Clk, PW, Q12);
-        register R13(regnum[13], Clk, PW, Q13);
-        register R14(regnum[14], Clk, PW, Q14);
+        register R0(.LE(regnum[0]), .Clk(Clk), .PW(PW), .Q(Q0));
+        register R1(.LE(regnum[1]), .Clk(Clk), .PW(PW), .Q(Q1));
+        register R2(.LE(regnum[2]), .Clk(Clk), .PW(PW), .Q(Q2));
+        register R3(.LE(regnum[3]), .Clk(Clk), .PW(PW), .Q(Q3));
+        register R4(.LE(regnum[4]), .Clk(Clk), .PW(PW), .Q(Q4));
+        register R5(.LE(regnum[5]), .Clk(Clk), .PW(PW), .Q(Q5));
+        register R6(.LE(regnum[6]), .Clk(Clk), .PW(PW), .Q(Q6));
+        register R7(.LE(regnum[7]), .Clk(Clk), .PW(PW), .Q(Q7));
+        register R8(.LE(regnum[8]), .Clk(Clk), .PW(PW), .Q(Q8));
+        register R9(.LE(regnum[9]), .Clk(Clk), .PW(PW), .Q(Q9));
+        register R10(.LE(regnum[10]), .Clk(Clk), .PW(PW), .Q(Q10));
+        register R11(.LE(regnum[11]), .Clk(Clk), .PW(PW), .Q(Q11));
+        register R12(.LE(regnum[12]), .Clk(Clk), .PW(PW), .Q(Q12));
+        register R13(.LE(regnum[13]), .Clk(Clk), .PW(PW), .Q(Q13));
+        register R14(.LE(regnum[14]), .Clk(Clk), .PW(PW), .Q(Q14));
 
-        in16out1mux mux1(PA,RA,Q0,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Q11,Q12,Q13,Q14,PC);
+        in16out1mux mux1(.Y(PA),.R(RA),.Q0(Q0),.Q1(Q1),.Q2(Q2),.Q3(Q3),.Q4(Q4),.Q5(Q5),.Q6(Q6),.Q7(Q7),.Q8(Q8),.Q9(Q9),.Q10(Q10),.Q11(Q11),.Q12(Q12),.Q13(Q13),.Q14(Q14),.Q15(PC));
 
-        in16out1mux mux2(PB,RB,Q0,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Q11,Q12,Q13,Q14,PC);
+        in16out1mux mux2(.Y(PB),.R(RB),.Q0(Q0),.Q1(Q1),.Q2(Q2),.Q3(Q3),.Q4(Q4),.Q5(Q5),.Q6(Q6),.Q7(Q7),.Q8(Q8),.Q9(Q9),.Q10(Q10),.Q11(Q11),.Q12(Q12),.Q13(Q13),.Q14(Q14),.Q15(PC));
 
-        in16out1mux mux3(PD,RD,Q0,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Q11,Q12,Q13,Q14,PC);
+        in16out1mux mux3(.Y(PD),.R(RD),.Q0(Q0),.Q1(Q1),.Q2(Q2),.Q3(Q3),.Q4(Q4),.Q5(Q5),.Q6(Q6),.Q7(Q7),.Q8(Q8),.Q9(Q9),.Q10(Q10),.Q11(Q11),.Q12(Q12),.Q13(Q13),.Q14(Q14),.Q15(PC));
+
+        always @(*) begin
+            monQ0 = Q0;
+            monQ1 = Q1;
+            monQ2 = Q2;
+            monQ3 = Q3;
+            monQ4 = Q4;
+            monQ5 = Q5;
+            monQ6 = Q6;
+            monQ7 = Q7;
+            monQ8 = Q8;
+            monQ9 = Q9;
+            monQ10 = Q10;
+            monQ11 = Q11;
+            monQ12 = Q12;
+            monQ13 = Q13;
+            monQ14 = Q14;
+            monQ15 = PC;
+        end
+
     endmodule
 
     module decoder (
