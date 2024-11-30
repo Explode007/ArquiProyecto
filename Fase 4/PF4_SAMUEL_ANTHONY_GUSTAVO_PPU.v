@@ -75,22 +75,26 @@ module PPU();
         integer i;
         always @(posedge monclk) begin
             $display("----------------------------------DEBUG SECTION---------------------------------------");
-            $display("| PW: %d | RW: %d | MUXWBTORF: %d | ALUOUT: %d |",
-                    dataWB_memwb, rd_out_memwb, WBTORF_MUX_out, Alu_out
-                    );
+            $display("  TA_Ctrl_out: %d | BranchMUXOUT: %d | LE_IF: %d | COND_EVAL_out: %b",
+                    TA_Ctrl_out, BranchMux_out,IFID_LE_CTRL_OUT, COND_EVAL_out);
             $display("-------------------------------------------------------------------------------------------");
             $display("| Time    | PC    | Instruction  ");
             $display("-------------------------------------------------------------------------------------------");
-            $display("| %5t | %5d | %-23s |", 
-                $time, PC_Out, instruction_name);
+            $display("| %5t | %5d | %-23s | %b", 
+                $time, PC_Out, instruction_name, cu_in);
             $display("-------------------------------------------------------------------------------------------");
-            $display("| ID Stage | PA: %d PB: %d PD: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | Branch&Link: %b | Branch: %b |",
+            $display("|=ID Stage=| PA: %d PB: %d PD: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | Branch&Link: %b | Branch: %b |",
                 Operand_A_OUT_RF, Operand_B_OUT_RF, Operand_D_OUT_RF, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out);
-            $display("| EX Stage | Operand A: %d | Operand B: %d | Operand D: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b |",
+            $display("|RA: %d | RB: %d | RD: %d |",
+                ra_ifid,rb_ifid,rd_ifid);
+            $display("|=EX Stage=| Operand A: %d | Operand B: %d | Operand D: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b |",
                 OperandA_out_idexe, OperandB_out_idexe, OperandD_out_idexe, am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
-            $display("| MEM Stage | RF_EN: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | Load: %b |",
-                rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem);
-            $display("| WB Stage | RF_EN: %b |", rf_en_out_memwb);
+            $display("| ALU_OUT: %d | SHIFTEROUT: %d | ALUMUX: %d |", 
+                Alu_out, Shifter_out, NextPCORAALU_MUX_OUT );
+            $display("|=MEM Stage=| RF_EN: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | Load: %b | ADDR/WB: %d |",
+                rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem, AluORNextPC_out_exemem);
+            $display("|=WB Stage=| RF_EN: %b | Rd: %d | PW: %d |", 
+                rf_en_out_memwb, rd_out_memwb, dataWB_memwb);
             $display("-------------------------------------------------------------------------------------------");
 
             $display("-------------------------------------------------------------------------------------------");
@@ -178,7 +182,7 @@ module PPU();
             wire [31:0] WBTORF_MUX_out;
             In2Out1MUX32 WBTORFMUX(
                 .In1(AluORNextPC_out_exemem),
-                .In2(dataMem_Out), //Originally had mem_mux_out, changed it to dataMem_Out (as the PPU diagram says)
+                .In2(dataMem_Out),
                 .selector(Load_out_exemem),
                 .out(WBTORF_MUX_out)
             );
@@ -188,8 +192,8 @@ module PPU();
             wire [31:0] NextPCORALUMUX_In1;
             wire NextPCORALU_CTRL_OUT;
             In2Out1MUX32 NextPCORALU(
-                .In1(NextPCORALUMUX_In1),
-                .In2(Alu_out),
+                .In1(Alu_out),
+                .In2(NextPCORALUMUX_In1),
                 .selector(NextPCORALU_CTRL_OUT),
                 .out(NextPCORAALU_MUX_OUT)
             );
@@ -264,8 +268,8 @@ module PPU();
         //BranchMUX
             wire [31:0] BranchMux_out; 
             In2Out1MUX32 BMux(
-                .In1(BranchRel_out),
-                .In2(PC_adder_out),
+                .In1(PC_adder_out),
+                .In2(BranchRel_out),
                 .selector(TA_Ctrl_out),
 
                 .out(BranchMux_out)
@@ -275,7 +279,7 @@ module PPU();
             wire [31:0] BranchRel_out;
             adder RelAdder(
                 .Adder_IN1(PC_adder_out),
-                .Adder_IN2(rot_ext_output), //TODO: Need to input the rotated thing here
+                .Adder_IN2(rot_ext_output),
 
                 .Adder_OUT(BranchRel_out)
             );
@@ -338,7 +342,7 @@ module PPU();
                 .monQ15(monQ15)
             );
         //================================================================
-        //Control Unit (Wires TO MUX)
+        //Control Unit
             wire [1:0] am_cu_out;
             wire rf_en_cu_out;
             wire [3:0] alu_op_cu_out;
@@ -555,8 +559,8 @@ module PPU();
                 //INPUTS
                 .ra_in({28'b0, ra_ifid}),               
                 .rb_in({28'b0, rb_ifid}),               
-                .COND_EVAL_in(cond),       
-                .load_instruc_in(COND_EVAL_out),    
+                .COND_EVAL_in(COND_EVAL_out),       
+                .load_instruc_in(Load_out_idexe),    
 
                 .rd_in_id({28'b0, rd_ifid}),            
                 .rd_in_exe({28'b0, rd_out_idexe}),          
@@ -625,51 +629,50 @@ endmodule
 
         always @(*) begin
             // Default values
-            CU_MUX_CTRL <= 1'b0;
-            IFID_LE_CTRL <= 1'b1;
-            PC_LE_CTRL <= 1'b1;
-            OperandA_MUX_CTRL <= 2'b00; 
-            OperandB_MUX_CTRL <= 2'b00; 
-            OperandD_MUX_CTRL <= 2'b00; 
+            CU_MUX_CTRL = 1'b0;
+            IFID_LE_CTRL = 1'b1;
+            PC_LE_CTRL = 1'b1;
+            OperandA_MUX_CTRL = 2'b00; 
+            OperandB_MUX_CTRL = 2'b00; 
+            OperandD_MUX_CTRL = 2'b00; 
 
             // Stall if there’s a data hazard with a load instruction
             if (load_instruc_in && ((rd_in_exe == ra_in) || (rd_in_exe == rb_in))) begin
-                CU_MUX_CTRL <= 1'b1;     
-                IFID_LE_CTRL <= 1'b0;
-                PC_LE_CTRL <= 1'b0;      
+                CU_MUX_CTRL = 1'b1;     
+                IFID_LE_CTRL = 1'b0;
+                PC_LE_CTRL = 1'b0;      
             end
-
             // Forwarding logic for OperandA
             if (rf_en_exe && (rd_in_exe == ra_in)) begin
-                OperandA_MUX_CTRL <= 2'b11; // Forward from Execute stage
+                OperandA_MUX_CTRL = 2'b11; // Forward from Execute stage
             end else if (rf_en_mem && (rd_in_mem == ra_in)) begin
-                OperandA_MUX_CTRL <= 2'b01; // Forward from Memory stage
+                OperandA_MUX_CTRL = 2'b01; // Forward from Memory stage
             end else if (rf_en_wb && (rd_in_wb == ra_in)) begin
-                OperandA_MUX_CTRL <= 2'b10; // Forward from Write-Back stage
+                OperandA_MUX_CTRL = 2'b10; // Forward from Write-Back stage
             end else begin
-                OperandA_MUX_CTRL <= 2'b00;
+                OperandA_MUX_CTRL = 2'b00;
             end
 
             // Forwarding logic for OperandB
             if (rf_en_exe && (rd_in_exe == rb_in)) begin
-                OperandB_MUX_CTRL <= 2'b11; // Forward from Execute stage
+                OperandB_MUX_CTRL = 2'b11; // Forward from Execute stage
             end else if (rf_en_mem && (rd_in_mem == rb_in)) begin
-                OperandB_MUX_CTRL <= 2'b01; // Forward from Memory stage
+                OperandB_MUX_CTRL = 2'b01; // Forward from Memory stage
             end else if (rf_en_wb && (rd_in_wb == rb_in)) begin
-                OperandB_MUX_CTRL <= 2'b10; // Forward from Write-Back stage
+                OperandB_MUX_CTRL = 2'b10; // Forward from Write-Back stage
             end else begin
-                OperandB_MUX_CTRL <= 2'b00;
+                OperandB_MUX_CTRL = 2'b00;
             end
 
             // Forwarding logic for OperandD
             if (rf_en_exe && (rd_in_exe == rd_in_id)) begin
-                OperandD_MUX_CTRL <= 2'b11; // Forward from EXE stage
+                OperandD_MUX_CTRL = 2'b11; // Forward from EXE stage
             end else if (rf_en_mem && (rd_in_mem == rd_in_id)) begin
-                OperandD_MUX_CTRL <= 2'b01; // Forward from MEM stage
+                OperandD_MUX_CTRL = 2'b01; // Forward from MEM stage
             end else if (rf_en_wb && (rd_in_wb == rd_in_id)) begin
-                OperandD_MUX_CTRL <= 2'b10; // Forward from WB stage
+                OperandD_MUX_CTRL = 2'b10; // Forward from WB stage
             end else begin
-                OperandD_MUX_CTRL <= 2'b00;
+                OperandD_MUX_CTRL = 2'b00;
             end
         end
     endmodule
@@ -736,7 +739,8 @@ endmodule
                 default:          COND_EVAL_out = 0;
             endcase
 
-            TA_Ctrl_out = (B_in || BL_in) && COND_EVAL_out;
+            // TA_Ctrl_out = (B_in || BL_in) && COND_EVAL_out;
+            TA_Ctrl_out = 0;
             BL_COND_out = BL_in && COND_EVAL_out;
         end
     endmodule
@@ -768,7 +772,7 @@ endmodule
         output reg [31:0] out
         );  
         always @(*) begin
-            if (selector) begin
+            if (!selector) begin
                 out = In1;
             end else begin
                 out = In2;
@@ -966,8 +970,7 @@ endmodule
         parameter OP_AND_INS = 4'b0000 ;
         parameter OP_OR_INS = 4'b1100 ;
         parameter OP_XOR_INS = 4'b0001 ; 
-        parameter OP_A_TRANSFER_INS = 4'b1101 ; //These gotta have something to do with MOV/CMP instructions
-        parameter OP_B_TRANSFER_INS = 4'b1101 ; //These gotta have something to do with MOV/CMP instructions
+        parameter OP_MOV_INS = 4'b1101 ; //These gotta have something to do with MOV/CMP instructions
         parameter OP_NOT_B_INS = 4'b1111 ; //MVN
         parameter OP_A_AND_NOT_B_INS = 4'b1110 ; //BIC
 
@@ -981,8 +984,8 @@ endmodule
         parameter OP_AND = 4'b0110;
         parameter OP_OR  = 4'b0111;
         parameter OP_XOR = 4'b1000;
-        parameter OP_A_TRANSFER = 4'b1001; //A Transfer is a register value?
-        parameter OP_B_TRANSFER = 4'b1010; //B Transfer is a shift value?
+        parameter OP_A_TRANSFER = 4'b1001; 
+        parameter OP_B_TRANSFER = 4'b1010; //Need only implement B transfer (Actual MOV required)
         parameter OP_NOT_B = 4'b1011;
         parameter OP_A_AND_NOT_B = 4'b1100;
 
@@ -1045,12 +1048,11 @@ endmodule
                             OP_A_SUB_B_INS:         alu_op = OP_A_SUB_B;       
                             OP_A_SUB_B_CIN_INS:     alu_op = OP_A_SUB_B_CIN;   
                             OP_B_SUB_A_INS:         alu_op = OP_B_SUB_A;       
-                            OP_B_SUB_A_CIN_INS:    alu_op = OP_B_SUB_A_CIN;   
+                            OP_B_SUB_A_CIN_INS:     alu_op = OP_B_SUB_A_CIN;   
                             OP_AND_INS:             alu_op = OP_AND;           
                             OP_OR_INS:              alu_op = OP_OR;            
                             OP_XOR_INS:             alu_op = OP_XOR;           
-                            OP_A_TRANSFER_INS:      alu_op = OP_A_TRANSFER;    //Honestly this seems to be irrelevant
-                            OP_B_TRANSFER_INS:      alu_op = OP_B_TRANSFER;    
+                            OP_MOV_INS:           alu_op = OP_B_TRANSFER;
                             OP_NOT_B_INS:           alu_op = OP_NOT_B;           
                             OP_A_AND_NOT_B_INS:     alu_op = OP_A_AND_NOT_B;     
                             default:                alu_op = 4'b1111;            
@@ -1204,8 +1206,7 @@ endmodule
         );
 
         always @ (posedge clk) begin
-            if(load_enable) begin
-                if(reset) begin
+            if(reset) begin
                     instr_cond <= 0;
                     branch_offset <= 0;
                     ra <= 0;
@@ -1214,17 +1215,15 @@ endmodule
                     immediate <= 0;
                     next_pc_out <= 0;
                     cu_in <= 0;
-
-                end else begin
-                    instr_cond <= instruction[31:28];
-                    branch_offset <= instruction[23:0];
-                    ra <= instruction[19:16];
-                    rd <= instruction[15:12];
-                    rb <= instruction[3:0];
-                    immediate <= instruction[11:0];
-                    next_pc_out <= next_pc_in;
-                    cu_in <= instruction;
-                end
+            end else if (load_enable) begin
+                instr_cond <= instruction[31:28];
+                branch_offset <= instruction[23:0];
+                ra <= instruction[19:16];
+                rd <= instruction[15:12];
+                rb <= instruction[3:0];
+                immediate <= instruction[11:0];
+                next_pc_out <= next_pc_in;
+                cu_in <= instruction;
             end
         end
     endmodule
