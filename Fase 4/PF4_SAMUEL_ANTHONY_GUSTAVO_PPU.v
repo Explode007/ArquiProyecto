@@ -17,10 +17,10 @@ module PPU();
             integer fi, code;
             reg [7:0] data;
             reg [8:0] Address;
-            initial begin
+
 
 //================================= ⌄ Precharge Section ⌄ =================================//
-
+            initial begin
                 // Open and read the test code file
                 fi = $fopen("precharge.txt", "r");
                 Address = 0;
@@ -31,8 +31,6 @@ module PPU();
                     Address = Address + 1;
                 end
                 $fclose(fi);  // Close the file
-
-//=========================================================================================//
 
                 // Initialize the signals
                 LE <= 1'b1;
@@ -74,23 +72,27 @@ module PPU();
         //======Monitor=======//
         integer i;
         always @(posedge clk) begin
+            $display("-----------============================================================--------------------");
+            $display("-----------============================================================--------------------");
+            $display("-----------============================================================--------------------");
             $display("--------------------------------REGISTER FILE DEBUG-------------------------------------------");
             $display("RW: %d RA: %d RB: %d RD: %d PW: %d PA: %d PB: %d PD: %d",
                     rf_en_out_memwb,ra_ifid,rb_ifid,rd_ifid,dataWB_memwb,Operand_A_OUT_RF,Operand_B_OUT_RF,Operand_D_OUT_RF );
-            $display("R1 = %d | R2 = %d | R3 = %d | R5 = %d", 
+            $display("R1 = %d | R2 = %d | R3 = %d | R5 = %d | R6 = %d | R10 = %d", 
                 monQ1, 
                 monQ2,
                 monQ3,
-                monQ5 
+                monQ5,
+                monQ6,
+                monQ10
             );
             $display("----------------------------------DEBUG SECTION---------------------------------------");
-            $display("  TA_Ctrl_out: %d | BranchMUXOUT: %d | LE_IF: %d |    ",
-                    TA_Ctrl_out, BranchMux_out, IFID_LE_CTRL_OUT  );
-            $display("-------------------------------------------------------------------------------------------");
-            $display("| Time    | PC    | Instruction  ");
+            $display("  TA_Ctrl_out: %d | BranchMUXOUT: %d | LE_IF: %d |  INSTR_COND_IFID: %b | INSTR_COND_IDEXE: %b   ",
+                    TA_Ctrl_out, BranchMux_out, IFID_LE_CTRL_OUT , instr_cond_ifid,instr_cond_idexe);
             $display("----------------------------------INSTRUCTION INFO----------------------------------------------");
-            $display("| %5t | %5d | %-23s | %b", 
+            $display("| Time: %5t | PC: 5%d |  Instruction Name %-23s | Instruction: %b",
                 $time, PC_Out, instruction_name, cu_in);
+            
             $display("--------------------------------PIPELINE INFO----------------------------------------");
             $display("|=ID Stage=| PA: %d PB: %d PD: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | Branch&Link: %b | Branch: %b |",
                 Operand_A_OUT_RF, Operand_B_OUT_RF, Operand_D_OUT_RF, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out);
@@ -104,8 +106,9 @@ module PPU();
                 rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem, AluORNextPC_out_exemem);
             $display("|=WB Stage=| RF_EN: %b | Rd: %d | PW: %d |", 
                 rf_en_out_memwb, rd_out_memwb, dataWB_memwb);
-            $display("-------------------------------------------------------------------------------------------");
-            
+            $display("-----------============================================================--------------------");
+            $display("-----------============================================================--------------------");
+            $display("-----------============================================================--------------------");
             // $display("-------------------------------------------------------------------------------------------");
 
             // $display("-------------------------------------------------------------------------------------------");
