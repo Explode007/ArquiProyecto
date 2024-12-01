@@ -19,7 +19,7 @@ module PPU();
             reg [8:0] Address;
 
 
-//================================= ⌄ Precharge Section ⌄ =================================//
+        //================================= ⌄ Precharge Section ⌄ =================================//
             initial begin
                 // Open and read the test code file
                 fi = $fopen("precharge.txt", "r");
@@ -34,9 +34,7 @@ module PPU();
 
                 // Initialize the signals
                 LE <= 1'b1;
-                rst <= 1'b1;
-                
-                
+                rst <= 1'b1;                
                 // Do required timed changes
                 #3 rst <= 1'b0;
                 
@@ -90,7 +88,7 @@ module PPU();
             $display("  TA_Ctrl_out: %d | BranchMUXOUT: %d | LE_IF: %d |  INSTR_COND_IFID: %b | INSTR_COND_IDEXE: %b   ",
                     TA_Ctrl_out, BranchMux_out, IFID_LE_CTRL_OUT , instr_cond_ifid,instr_cond_idexe);
             $display("----------------------------------INSTRUCTION INFO----------------------------------------------");
-            $display("| Time: %5t | PC: 5%d |  Instruction Name %-23s | Instruction: %b",
+            $display("| Time: %5t | PC: %d |  Instruction Name %-23s | Instruction: %b",
                 $time, PC_Out, instruction_name, cu_in);
             
             $display("--------------------------------PIPELINE INFO----------------------------------------");
@@ -102,9 +100,9 @@ module PPU();
                 OperandA_out_idexe, OperandB_out_idexe, OperandD_out_idexe, am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
             $display("| ALU_OUT: %d | SHIFTEROUT: %d | ALUMUX: %d | ALUMUX_CTRL: %b | BL COND OUT: %b | COND_EVAL_out: %b", 
                 Alu_out, Shifter_out, NextPCORAALU_MUX_OUT,NextPCORALU_CTRL_OUT, bl_condition_out, COND_EVAL_out);
-            $display("|=MEM Stage=| RF_EN: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | Load: %b | ADDR/WB: %d |",
-                rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem, AluORNextPC_out_exemem);
-            $display("|=WB Stage=| RF_EN: %b | Rd: %d | PW: %d |", 
+            $display("|=MEM Stage=| RF_EN: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | Load: %b | ADDR/WB: %d | DATAMEM_OUT: %b",
+                rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem, AluORNextPC_out_exemem,dataMem_Out);
+            $display("|=WB Stage=| RF_EN: %b | Rd: %d | PW: %d | ", 
                 rf_en_out_memwb, rd_out_memwb, dataWB_memwb);
             $display("-----------============================================================--------------------");
             $display("-----------============================================================--------------------");
@@ -127,12 +125,7 @@ module PPU();
             //     end
 
             // $display("---------------------------------------------------");
-        end 
-
-
-
-
-
+        end
 
     //==================INSTANTIATION===================//
         //Generic Wires
@@ -1064,13 +1057,13 @@ endmodule
                         endcase
                     end
 
-                    3'b01z: begin
+                    3'b01z: begin // Load Store (01)
                                             
                         Load = instruction[20]; // 1 for Load (LDR), 0 for Store (STR)
                         rw = !instruction[20]; // 1 for write, 0 for read (according to phase1)
                         size = !instruction[22]; // 0 for byte, 1 for word (according to phase1)
                         
-                        datamem_en = !instruction[20];
+                        datamem_en = instruction[20];
                         rf_en = instruction[20]; // 1 When load, 0 when store
 
 
