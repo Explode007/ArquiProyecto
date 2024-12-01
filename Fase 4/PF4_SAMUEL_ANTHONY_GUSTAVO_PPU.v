@@ -73,38 +73,39 @@ module PPU();
 
         //======Monitor=======//
         integer i;
-        always @(posedge monclk) begin
-            $display("----------------------------------DEBUG SECTION---------------------------------------");
-            $display("  TA_Ctrl_out: %d | BranchMUXOUT: %d | LE_IF: %d | COND_EVAL_out: %b",
-                    TA_Ctrl_out, BranchMux_out,IFID_LE_CTRL_OUT, COND_EVAL_out);
-            $display("-------------------------------------------------------------------------------------------");
-            $display("| Time    | PC    | Instruction  ");
-            $display("-------------------------------------------------------------------------------------------");
-            $display("| %5t | %5d | %-23s | %b", 
-                $time, PC_Out, instruction_name, cu_in);
-            $display("-------------------------------------------------------------------------------------------");
-            $display("|=ID Stage=| PA: %d PB: %d PD: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | Branch&Link: %b | Branch: %b |",
-                Operand_A_OUT_RF, Operand_B_OUT_RF, Operand_D_OUT_RF, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out);
-            $display("|RA: %d | RB: %d | RD: %d |",
-                ra_ifid,rb_ifid,rd_ifid);
-            $display("|=EX Stage=| Operand A: %d | Operand B: %d | Operand D: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b |",
-                OperandA_out_idexe, OperandB_out_idexe, OperandD_out_idexe, am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
-            $display("| ALU_OUT: %d | SHIFTEROUT: %d | ALUMUX: %d |", 
-                Alu_out, Shifter_out, NextPCORAALU_MUX_OUT );
-            $display("|=MEM Stage=| RF_EN: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | Load: %b | ADDR/WB: %d |",
-                rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem, AluORNextPC_out_exemem);
-            $display("|=WB Stage=| RF_EN: %b | Rd: %d | PW: %d |", 
-                rf_en_out_memwb, rd_out_memwb, dataWB_memwb);
-            $display("-------------------------------------------------------------------------------------------");
-
-            $display("-------------------------------------------------------------------------------------------");
-            $display("Register Values (in decimal):");
+        always @(posedge clk) begin
+            $display("--------------------------------REGISTER FILE DEBUG-------------------------------------------");
+            $display("RW: %d RA: %d RB: %d RD: %d PW: %d PA: %d PB: %d PD: %d",
+                    rf_en_out_memwb,ra_ifid,rb_ifid,rd_ifid,dataWB_memwb,Operand_A_OUT_RF,Operand_B_OUT_RF,Operand_D_OUT_RF );
             $display("R1 = %d | R2 = %d | R3 = %d | R5 = %d", 
                 monQ1, 
                 monQ2,
                 monQ3,
                 monQ5 
             );
+            $display("----------------------------------DEBUG SECTION---------------------------------------");
+            $display("  TA_Ctrl_out: %d | BranchMUXOUT: %d | LE_IF: %d |    ",
+                    TA_Ctrl_out, BranchMux_out, IFID_LE_CTRL_OUT  );
+            $display("-------------------------------------------------------------------------------------------");
+            $display("| Time    | PC    | Instruction  ");
+            $display("----------------------------------INSTRUCTION INFO----------------------------------------------");
+            $display("| %5t | %5d | %-23s | %b", 
+                $time, PC_Out, instruction_name, cu_in);
+            $display("--------------------------------PIPELINE INFO----------------------------------------");
+            $display("|=ID Stage=| PA: %d PB: %d PD: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | Branch&Link: %b | Branch: %b |",
+                Operand_A_OUT_RF, Operand_B_OUT_RF, Operand_D_OUT_RF, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out);
+            $display("|RA: %d | RB: %d | RD: %d |",
+                ra_ifid,rb_ifid,rd_ifid);
+            $display("|=EX Stage=| Operand A: %d | Operand B: %d | Operand D: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b |",
+                OperandA_out_idexe, OperandB_out_idexe, OperandD_out_idexe, am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
+            $display("| ALU_OUT: %d | SHIFTEROUT: %d | ALUMUX: %d | ALUMUX_CTRL: %b | BL COND OUT: %b | COND_EVAL_out: %b", 
+                Alu_out, Shifter_out, NextPCORAALU_MUX_OUT,NextPCORALU_CTRL_OUT, bl_condition_out, COND_EVAL_out);
+            $display("|=MEM Stage=| RF_EN: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | Load: %b | ADDR/WB: %d |",
+                rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem, AluORNextPC_out_exemem);
+            $display("|=WB Stage=| RF_EN: %b | Rd: %d | PW: %d |", 
+                rf_en_out_memwb, rd_out_memwb, dataWB_memwb);
+            $display("-------------------------------------------------------------------------------------------");
+            
             // $display("-------------------------------------------------------------------------------------------");
 
             // $display("-------------------------------------------------------------------------------------------");
@@ -140,8 +141,8 @@ module PPU();
         //RF Mux SaveNEXTPC
             wire [31:0] RF_MUX_SAVENEXTPC_OUT;
             In2Out1MUX32 muxsavenextpc(
-                .In1({28'b0, 4'b1110}),
-                .In2({28'b0, rd_ifid}),
+                .In1({28'b0, rd_ifid}),
+                .In2({28'b0, 4'b1110}),
                 .selector(bl_condition_out),
                 .out(RF_MUX_SAVENEXTPC_OUT)
             );
@@ -313,7 +314,7 @@ module PPU();
             wire [31:0] Operand_D_OUT_RF;
             wire [31:0] monQ0,monQ1,monQ2,monQ3,monQ4,monQ5,monQ6,monQ7,monQ8,monQ9,monQ10,monQ11,monQ12,monQ13,monQ14,monQ15;
             register_file rf1(
-                .LE(rf_en_out),
+                .LE(rf_en_out_memwb),
                 .Clk(clk),
                 .PC(next_pc_out_ifid),
                 .PW(dataWB_memwb),
@@ -738,10 +739,11 @@ endmodule
                 NEVER:            COND_EVAL_out = 0;
                 default:          COND_EVAL_out = 0;
             endcase
-
+            //TODO: fix condition handler (seems related to instruction condition not arriving)
             // TA_Ctrl_out = (B_in || BL_in) && COND_EVAL_out;
             TA_Ctrl_out = 0;
-            BL_COND_out = BL_in && COND_EVAL_out;
+            // BL_COND_out = BL_in && COND_EVAL_out;
+            BL_COND_out = 0;
         end
     endmodule
     
@@ -1383,12 +1385,13 @@ endmodule
         register R12(.LE(regnum[12]), .Clk(Clk), .PW(PW), .Q(Q12));
         register R13(.LE(regnum[13]), .Clk(Clk), .PW(PW), .Q(Q13));
         register R14(.LE(regnum[14]), .Clk(Clk), .PW(PW), .Q(Q14));
+        register R15(.LE(regnum[15]), .Clk(Clk), .PW(PC), .Q(Q15));
 
-        in16out1mux mux1(.Y(PA),.R(RA),.Q0(Q0),.Q1(Q1),.Q2(Q2),.Q3(Q3),.Q4(Q4),.Q5(Q5),.Q6(Q6),.Q7(Q7),.Q8(Q8),.Q9(Q9),.Q10(Q10),.Q11(Q11),.Q12(Q12),.Q13(Q13),.Q14(Q14),.Q15(PC));
+        in16out1mux mux1(.Y(PA),.R(RA),.Q0(Q0),.Q1(Q1),.Q2(Q2),.Q3(Q3),.Q4(Q4),.Q5(Q5),.Q6(Q6),.Q7(Q7),.Q8(Q8),.Q9(Q9),.Q10(Q10),.Q11(Q11),.Q12(Q12),.Q13(Q13),.Q14(Q14),.Q15(Q15));
 
-        in16out1mux mux2(.Y(PB),.R(RB),.Q0(Q0),.Q1(Q1),.Q2(Q2),.Q3(Q3),.Q4(Q4),.Q5(Q5),.Q6(Q6),.Q7(Q7),.Q8(Q8),.Q9(Q9),.Q10(Q10),.Q11(Q11),.Q12(Q12),.Q13(Q13),.Q14(Q14),.Q15(PC));
+        in16out1mux mux2(.Y(PB),.R(RB),.Q0(Q0),.Q1(Q1),.Q2(Q2),.Q3(Q3),.Q4(Q4),.Q5(Q5),.Q6(Q6),.Q7(Q7),.Q8(Q8),.Q9(Q9),.Q10(Q10),.Q11(Q11),.Q12(Q12),.Q13(Q13),.Q14(Q14),.Q15(Q15));
 
-        in16out1mux mux3(.Y(PD),.R(RD),.Q0(Q0),.Q1(Q1),.Q2(Q2),.Q3(Q3),.Q4(Q4),.Q5(Q5),.Q6(Q6),.Q7(Q7),.Q8(Q8),.Q9(Q9),.Q10(Q10),.Q11(Q11),.Q12(Q12),.Q13(Q13),.Q14(Q14),.Q15(PC));
+        in16out1mux mux3(.Y(PD),.R(RD),.Q0(Q0),.Q1(Q1),.Q2(Q2),.Q3(Q3),.Q4(Q4),.Q5(Q5),.Q6(Q6),.Q7(Q7),.Q8(Q8),.Q9(Q9),.Q10(Q10),.Q11(Q11),.Q12(Q12),.Q13(Q13),.Q14(Q14),.Q15(Q15));
 
         always @(*) begin
             monQ0 = Q0;
@@ -1406,7 +1409,7 @@ endmodule
             monQ12 = Q12;
             monQ13 = Q13;
             monQ14 = Q14;
-            monQ15 = PC;
+            monQ15 = Q15;
         end
 
     endmodule
@@ -1419,7 +1422,7 @@ endmodule
 
         always @(*)
             begin
-                if(LE == 1'b1) begin
+                if(LE) begin
                     case(RW)
                     4'b0000: regnum = 16'b0000000000000001;
                     4'b0001: regnum = 16'b0000000000000010;
@@ -1476,6 +1479,9 @@ endmodule
         output reg[31:0] Q
         );
 
-        always @(posedge Clk)
-            if(LE) Q <= PW;
+        always @(posedge Clk) begin
+            if(LE) begin 
+                Q <= PW;
+            end
+        end
     endmodule
