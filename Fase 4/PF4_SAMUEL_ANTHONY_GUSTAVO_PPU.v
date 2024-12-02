@@ -658,7 +658,7 @@ endmodule
                 PC_LE_CTRL = 1'b0;      
             end
             else if (COND_EVAL_in) begin
-                PC_LE_CTRL = 1'b0;
+                PC_LE_CTRL = 1'b1;
                 IFID_LE_CTRL = 1'b0;
                 CU_MUX_CTRL = 1'b1;
             end
