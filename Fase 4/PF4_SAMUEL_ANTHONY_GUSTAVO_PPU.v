@@ -35,7 +35,7 @@ module PPU();
                 // // Initialize the signals
                 rst <= 1'b1;                
                 // // Do required timed changes
-                #3 rst <= 1'b0;
+                #4 rst <= 1'b0;
                 
             end
 
@@ -44,10 +44,11 @@ module PPU();
             end
 
             reg [167:0] instruction_name;
+            reg [167:0] ins_n_ifid;
 
             always @ (*) begin
 
-                case (cu_in)
+                case (insMem_Out)
                     32'b11100011101000000101000000110100: instruction_name = "MOV R5, #52";
                     32'b11100101100101010001000000000000: instruction_name = "LDR R1, [R5, #0]";
                     32'b11100101110101010010000000000100: instruction_name = "LDRB R2, [R5, #4]";
@@ -62,7 +63,21 @@ module PPU();
                     32'b11101010111111111111111111111111: instruction_name = "B -1";
                     default: instruction_name = "NULL";
                 endcase
-
+                case (cu_in)
+                    32'b11100011101000000101000000110100: ins_n_ifid = "MOV R5, #52";
+                    32'b11100101100101010001000000000000: ins_n_ifid = "LDR R1, [R5, #0]";
+                    32'b11100101110101010010000000000100: ins_n_ifid = "LDRB R2, [R5, #4]";
+                    32'b11100101110101010011000000000101: ins_n_ifid = "LDRB R3, [R5, #5] ";
+                    32'b11100001101100001010000000000001: ins_n_ifid = "MOVS R10,R1 ";
+                    32'b01011010000000000000000000000100: ins_n_ifid = "BPL +4 ";
+                    32'b11100000010000110110000000000010: ins_n_ifid = "SUB R6,R3,R2";
+                    32'b00000000000000000000000000000000: ins_n_ifid = "NOP";
+                    32'b11101010000000000000000000000001: ins_n_ifid = "B +1";
+                    32'b11100000100000110110000000000010: ins_n_ifid = "ADD R6,R3,R2";
+                    32'b11100101110001010110000000000110: ins_n_ifid = "STRB R6, [R5, #6]";
+                    32'b11101010111111111111111111111111: ins_n_ifid = "B -1";
+                    default: ins_n_ifid = "NULL";
+                endcase
             end
 
 
@@ -71,23 +86,28 @@ module PPU();
         always @(posedge clk) begin
             $display("-----------============================================================--------------------");
             $display("----------------------------------INSTRUCTION INFO----------------------------------------------");
-            $display("| Time: %5t | PC: %d |  Instruction Name: %-23s | Instruction: %b",
-                $time, PC_Out, instruction_name, cu_in);
+            $display("| Time: %5t | PC OUT: %d |  | Instruction Name: %-23s | Instruction: %b",
+                $time, PC_Out, instruction_name, insMem_Out);
             $display("");
             $display("--------------------------------REGISTER FILE MONITOR-------------------------------------------");
             $display("R1 = %d | R2 = %d | R3 = %d | R5 = %d | R6 = %d | R10 = %d", 
                 monQ1,monQ2,monQ3,monQ5,monQ6,monQ10);
             $display("");
             $display("----------------------------------DEBUG SECTION---------------------------------------");
-            $display("TA_Ctrl_out: %d | BranchMUXOUT: %d | Cond_hand_flags_internal: %b | 4xRotExtOut: %b | PCADDER: %b |",
-                    TA_Ctrl_out, BranchMux_out, monFlags, rot_ext_output, PC_adder_out);
+            $display("TA_Ctrl_out: %d | BranchMUXOUT: %d | Cond_hand_flags_internal: %b | 4xRotExtOut: %d |",
+                    TA_Ctrl_out, BranchMux_out, monFlags[3:0], rot_ext_output );
+            $display("| PCADDER: %d | PC_LE_CTRL: %b | IFID_LE_CTRL: %b | CU_MUX_CTRL_OUT: %b |",
+            PC_adder_out,PC_LE_CTRL_OUT, IFID_LE_CTRL_OUT, CU_MUX_CTRL_OUT );
             $display("");
             $display("--------------------------------PIPELINE INFO----------------------------------------");
             $display("|=ID Stage=|");
+            $display("| Reset: %b | IFID PC (NEXTPC): %d | Instruction Name IFID: %-23s | Instruction IFID: %b",
+                    TA_Ctrl_out, next_pc_out_ifid, ins_n_ifid ,cu_in);
             $display("| LE_IF: %b | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | B: %b | BL: %b |",
-                IFID_LE_CTRL_OUT, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_out_cumux, branch_link_out_cumux);
+                IFID_LE_CTRL_OUT, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_cu_out, branch_link_cu_out);
             $display("| RA: %d | RB: %d | RD: %d | INSTR_COND_IFID: %b | PA: %d | PB: %d | PD: %d |",
                 ra_ifid,rb_ifid,rd_ifid,instr_cond_ifid, Operand_A_OUT_RF, Operand_B_OUT_RF, Operand_D_OUT_RF);
+            $display("");
             $display("|=EXE Stage=|");
             $display("| Operand A: %d | Operand B: %d | Operand D: %d",OperandA_out_idexe, OperandB_out_idexe, OperandD_out_idexe);
             $display("| AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b |",
@@ -223,9 +243,9 @@ module PPU();
             wire COND_EVAL_out;
             wire [31:0] monFlags;
             ConditionHandler condhandler (
-                .B_in(branch_out_cumux),
+                .B_in(branch_cu_out),
                 .BL_in(branch_link_cu_out),
-                .I_Cond_in(instr_cond_ifid),
+                .I_Cond_in(instr_cond_idexe),
                 .Flags_in(PSR_MUX_OUT),
                 .monFlags(monFlags),
 
@@ -372,8 +392,6 @@ module PPU();
             wire rf_en_out_cumux;
             wire [3:0] alu_op_out_cumux;
             wire Load_out_cumux;
-            wire branch_out_cumux;
-            wire branch_link_out_cumux;
             wire s_bit_out_cumux;
             wire rw_out_cumux;
             wire size_out_cumux;
@@ -386,8 +404,6 @@ module PPU();
                 .rf_en_in(inbetweenCUCUMUX_MUX_OUT[0]),
                 .alu_op_in(alu_op_cu_out),
                 .Load_in(Load_cu_out),
-                .branch_in(branch_cu_out),
-                .branch_link_in(branch_link_cu_out),
                 .s_bit_in(s_bit_cu_out),
                 .rw_in(rw_cu_out),
                 .size_in(size_cu_out),
@@ -398,8 +414,6 @@ module PPU();
                 .rf_en_out(rf_en_out_cumux),
                 .alu_op_out(alu_op_out_cumux),
                 .Load_out(Load_out_cumux),
-                .branch_out(branch_out_cumux),
-                .branch_link_out(branch_link_out_cumux),
                 .s_bit_out(s_bit_out_cumux),
                 .rw_out(rw_out_cumux),
                 .size_out(size_out_cumux),
@@ -445,12 +459,14 @@ module PPU();
 
             wire [1:0] am_out_idexe;
             wire [3:0] alu_op_out_idexe;
-            
+            wire [3:0] instr_cond_idexe;
+
             wire [31:0] OperandA_out_idexe;
             wire [31:0] OperandB_out_idexe;
             wire [31:0] OperandD_out_idexe;
             wire [11:0] immediate_out_idexe;
             wire [3:0] rd_out_idexe;
+
             
             id_exe_reg ID_EXE(
                 .clk(clk), 
@@ -470,6 +486,7 @@ module PPU();
                 .operand_b_in(OperandB_MUX_OUT),
                 .operand_d_in(OperandD_MUX_OUT),
                 .immediate_in(immediate_ifid),
+                .instr_cond_in(instr_cond_ifid),
                 .rd_in(RF_MUX_SAVENEXTPC_OUT[3:0]),
                 .NEXTORALU_ctrl_in(bl_condition_out),
 
@@ -487,6 +504,7 @@ module PPU();
                 .operand_b_out(OperandB_out_idexe),
                 .operand_d_out(OperandD_out_idexe),
                 .immediate_out(immediate_out_idexe),
+                .instr_cond_out(instr_cond_idexe),
                 .rd_out(rd_out_idexe),
                 .NEXTORALU_ctrl_out(NextPCORALU_CTRL_OUT)
             );
@@ -637,6 +655,10 @@ endmodule
                 CU_MUX_CTRL = 1'b1;     
                 IFID_LE_CTRL = 1'b0;
                 PC_LE_CTRL = 1'b0;      
+            end else if (COND_EVAL_in) begin
+                PC_LE_CTRL = 1'b0;
+                IFID_LE_CTRL = 1'b0;
+                CU_MUX_CTRL = 1'b1;
             end
             // Forwarding logic for OperandA
             if (rf_en_exe && (rd_in_exe == ra_in)) begin
@@ -717,7 +739,7 @@ endmodule
             TA_Ctrl_out = 0;
             BL_COND_out = 0;
             COND_EVAL_out = 0;
-
+            if (B_in || BL_in) begin
                 case (I_Cond_in)
                     EQUALS:           COND_EVAL_out = Z;
                     NOT_EQUALS:       COND_EVAL_out = ~Z;
@@ -737,8 +759,8 @@ endmodule
                     NEVER:            COND_EVAL_out = 0;
                     default:          COND_EVAL_out = 0;
                 endcase
-            
-            TA_Ctrl_out = ((B_in || BL_in) && COND_EVAL_out);
+                TA_Ctrl_out = COND_EVAL_out;
+            end
             // TA_Ctrl_out = 0;
             // BL_COND_out = BL_in && COND_EVAL_out;
             BL_COND_out = 0;
@@ -942,7 +964,7 @@ endmodule
 
         reg [7:0] Mem [0:255];
         
-        always @(A)
+        always @(*)
             I = { Mem[A], Mem[A+1], Mem[A+2], Mem[A+3] };
     endmodule
 
@@ -1110,9 +1132,7 @@ endmodule
         input [1:0] am_in,
         input rf_en_in,          
         input [3:0] alu_op_in,   
-        input Load_in,            
-        input branch_in,
-        input branch_link_in,    
+        input Load_in,               
         input s_bit_in,          
         input rw_in,             
         input size_in,           
@@ -1122,8 +1142,6 @@ endmodule
         output reg rf_en_out,          
         output reg [3:0] alu_op_out,   
         output reg Load_out,            
-        output reg branch_out,   
-        output reg branch_link_out,   
         output reg s_bit_out,          
         output reg rw_out,             
         output reg size_out,           
@@ -1136,8 +1154,6 @@ endmodule
                 rf_en_out = rf_en_in;
                 alu_op_out = alu_op_in;
                 Load_out = Load_in;
-                branch_out = branch_in;
-                branch_link_out = branch_link_in;
                 s_bit_out = s_bit_in;
                 rw_out = rw_in;
                 size_out = size_in;
@@ -1148,8 +1164,6 @@ endmodule
                 rf_en_out = 1'b0;
                 alu_op_out = 1'b0;
                 Load_out = 1'b0;
-                branch_out = 1'b0;
-                branch_link_out = 1'b0;
                 s_bit_out = 1'b0;
                 rw_out = 1'b0;
                 size_out = 1'b0;
@@ -1241,6 +1255,7 @@ endmodule
         input [11:0] immediate_in,
         input [3:0] rd_in,
         input NEXTORALU_ctrl_in,
+        input [3:0] instr_cond_in,
 
         output reg rf_en_out, s_bit_out, datamem_en_out, readwrite_out, size_out, load_instruction_out,
         output reg [1:0] am_out,
@@ -1248,7 +1263,8 @@ endmodule
         output reg [31:0] next_pc_out, operand_a_out, operand_b_out, operand_d_out,
         output reg [11:0] immediate_out,
         output reg [3:0] rd_out,
-        output reg NEXTORALU_ctrl_out
+        output reg NEXTORALU_ctrl_out,
+        output reg [3:0] instr_cond_out
         );
 
         always @ (posedge clk) begin 
@@ -1268,6 +1284,7 @@ endmodule
                 immediate_out <= 0;
                 rd_out <= 0;
                 NEXTORALU_ctrl_out <= 0;
+                instr_cond_out <= 0;
                 
             end else begin
                 rf_en_out <= rf_en_in;
@@ -1285,6 +1302,7 @@ endmodule
                 immediate_out <= immediate_in;
                 rd_out <= rd_in;
                 NEXTORALU_ctrl_out <= NEXTORALU_ctrl_in;
+                instr_cond_out <= instr_cond_in;
             end
         end
     endmodule
