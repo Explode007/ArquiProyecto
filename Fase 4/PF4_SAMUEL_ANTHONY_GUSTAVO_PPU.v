@@ -14,12 +14,12 @@ module PPU();
                 #1 monclk <= ~monclk;
             end
             //Preload
-            integer fi, code;
-            reg [7:0] data;
-            reg [8:0] Address;
 
 
         //================================= ⌄ Precharge Section ⌄ =================================//
+            integer fi, code;
+            reg [7:0] data;
+            reg [8:0] Address;
             initial begin
                 // Open and read the test code file
                 fi = $fopen("precharge.txt", "r");
@@ -38,10 +38,6 @@ module PPU();
                 // // Do required timed changes
                 // #4 rst <= 1'b0;
                 
-            end
-
-            initial begin
-                #50 $finish; //41 so it can print out 40
             end
 
             reg [167:0] instruction_name;
@@ -80,6 +76,7 @@ module PPU();
                     default: ins_n_ifid = "NULL";
                 endcase
             end
+
 
 
         //======Monitor=======//
@@ -126,24 +123,31 @@ module PPU();
             $display("| RF_EN: %b | Rd: %d | PW: %d | ", 
                 rf_en_out_memwb, rd_out_memwb, dataWB_memwb);
             $display("-----------============================================================--------------------");
-            // $display("-------------------------------------------------------------------------------------------");
+            $display("-------------------------------------------------------------------------------------------");            
+        end
 
-            // $display("-------------------------------------------------------------------------------------------");
-            // $display("| Address Range |                                  Values                                 |");
-            // $display("-------------------------------------------------------------------------------------------");
+        initial begin
+            #52
+            $display("-------------------------------------------------------------------------------------------");
+            $display("| Address Range |                                  Values                                 |");
+            $display("-------------------------------------------------------------------------------------------");
 
-            //     for (i = 0; i < 256; i = i + 8) begin
-            //         $write("| %03d - %03d     | ", i, i + 7);  // Address range
+                for (i = 0; i < 256; i = i + 8) begin
+                    $write("| %03d - %03d     | ", i, i + 7);  // Address range
 
-            //         // Print values for 8 consecutive memory locations
-            //         $write("%d %d %d %d %d %d %d %d", 
-            //             dataMem.Mem[i], dataMem.Mem[i+1], dataMem.Mem[i+2], dataMem.Mem[i+3],
-            //             dataMem.Mem[i+4], dataMem.Mem[i+5], dataMem.Mem[i+6], dataMem.Mem[i+7]);
+                    // Print values for 8 consecutive memory locations
+                    $write("%d %d %d %d %d %d %d %d", 
+                        dataMem.Mem[i], dataMem.Mem[i+1], dataMem.Mem[i+2], dataMem.Mem[i+3],
+                        dataMem.Mem[i+4], dataMem.Mem[i+5], dataMem.Mem[i+6], dataMem.Mem[i+7]);
 
-            //         $display(" |");  // Close the table row
-            //     end
+                    $display(" |");  // Close the table row
+                end
 
-            // $display("---------------------------------------------------");
+            $display("---------------------------------------------------");
+        end
+
+        initial begin
+            #54 $finish; //41 so it can print out 40
         end
 
     //==================INSTANTIATION===================//
