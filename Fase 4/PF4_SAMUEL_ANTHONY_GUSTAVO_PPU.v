@@ -1101,7 +1101,7 @@ endmodule
                         rw = !instruction[20]; // 1 for write, 0 for read (according to phase1)
                         size = !instruction[22]; // 0 for byte, 1 for word (according to phase1)
                         
-                        datamem_en = instruction[20];
+                        datamem_en = !instruction[20];
                         rf_en = instruction[20]; // 1 When load, 0 when store
 
 
