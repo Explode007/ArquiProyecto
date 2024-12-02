@@ -33,9 +33,10 @@ module PPU();
                 $fclose(fi);  // Close the file
 
                 // // Initialize the signals
-                rst <= 1'b1;                
+                rst <= 1'b1;             
+                #3 rst <= 1'b0;                
                 // // Do required timed changes
-                #4 rst <= 1'b0;
+                // #4 rst <= 1'b0;
                 
             end
 
@@ -245,7 +246,7 @@ module PPU();
             ConditionHandler condhandler (
                 .B_in(branch_cu_out),
                 .BL_in(branch_link_cu_out),
-                .I_Cond_in(instr_cond_idexe),
+                .I_Cond_in(instr_cond_ifid),
                 .Flags_in(PSR_MUX_OUT),
                 .monFlags(monFlags),
 
@@ -655,7 +656,8 @@ endmodule
                 CU_MUX_CTRL = 1'b1;     
                 IFID_LE_CTRL = 1'b0;
                 PC_LE_CTRL = 1'b0;      
-            end else if (COND_EVAL_in) begin
+            end
+            else if (COND_EVAL_in) begin
                 PC_LE_CTRL = 1'b0;
                 IFID_LE_CTRL = 1'b0;
                 CU_MUX_CTRL = 1'b1;
