@@ -147,6 +147,15 @@ module PPU();
         end
 
         initial begin
+            #54;
+            $display("");
+            $display("----------Data Memory Dump---------");
+            for (i = 0; i < 253; i = i + 4) begin
+            $display("%b %b %b %b", dataMem.Mem[i], dataMem.Mem[i+1], dataMem.Mem[i+2], dataMem.Mem[i+3]);
+            end
+        end
+
+        initial begin
             #54 $finish; //41 so it can print out 40
         end
 
