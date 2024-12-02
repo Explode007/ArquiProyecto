@@ -296,7 +296,7 @@ module PPU();
         //Branch Rel PC Adder
             wire [31:0] BranchRel_out;
             adder RelAdder(
-                .Adder_IN1(PC_adder_out),
+                .Adder_IN1(PC_Out), //USE PC OUT or PCADDEROUT - 4 (not using it makes the address of the instr off by +1)
                 .Adder_IN2(rot_ext_output),
 
                 .Adder_OUT(BranchRel_out)
