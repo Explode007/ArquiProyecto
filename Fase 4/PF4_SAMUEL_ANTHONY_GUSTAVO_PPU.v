@@ -71,41 +71,41 @@ module PPU();
         integer i;
         always @(posedge clk) begin
             $display("-----------============================================================--------------------");
-            $display("-----------============================================================--------------------");
-            $display("-----------============================================================--------------------");
-            $display("--------------------------------REGISTER FILE DEBUG-------------------------------------------");
-            $display("RW: %d RA: %d RB: %d RD: %d PW: %d PA: %d PB: %d PD: %d",
-                    rf_en_out_memwb,ra_ifid,rb_ifid,rd_ifid,dataWB_memwb,Operand_A_OUT_RF,Operand_B_OUT_RF,Operand_D_OUT_RF );
-            $display("R1 = %d | R2 = %d | R3 = %d | R5 = %d | R6 = %d | R10 = %d", 
-                monQ1, 
-                monQ2,
-                monQ3,
-                monQ5,
-                monQ6,
-                monQ10
-            );
-            $display("----------------------------------DEBUG SECTION---------------------------------------");
-            $display("  TA_Ctrl_out: %d | BranchMUXOUT: %d | LE_IF: %d |  INSTR_COND_IFID: %b | INSTR_COND_IDEXE: %b   ",
-                    TA_Ctrl_out, BranchMux_out, IFID_LE_CTRL_OUT , instr_cond_ifid,instr_cond_idexe);
             $display("----------------------------------INSTRUCTION INFO----------------------------------------------");
-            $display("| Time: %5t | PC: %d |  Instruction Name %-23s | Instruction: %b",
+            $display("| Time: %5t | PC: %d |  Instruction Name: %-23s | Instruction: %b",
                 $time, PC_Out, instruction_name, cu_in);
-            
+            $display("");
+            $display("--------------------------------REGISTER FILE MONITOR-------------------------------------------");
+            $display("R1 = %d | R2 = %d | R3 = %d | R5 = %d | R6 = %d | R10 = %d", 
+                monQ1,monQ2,monQ3,monQ5,monQ6,monQ10);
+            $display("");
+            $display("----------------------------------DEBUG SECTION---------------------------------------");
+            $display("TA_Ctrl_out: %d | BranchMUXOUT: %d | Cond_hand_flags_internal: %b",
+                    TA_Ctrl_out, BranchMux_out, monFlags);
+            $display("");
             $display("--------------------------------PIPELINE INFO----------------------------------------");
-            $display("|=ID Stage=| PA: %d PB: %d PD: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | Branch&Link: %b | Branch: %b |",
-                Operand_A_OUT_RF, Operand_B_OUT_RF, Operand_D_OUT_RF, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_link_cu_out, branch_cu_out);
-            $display("|RA: %d | RB: %d | RD: %d |",
-                ra_ifid,rb_ifid,rd_ifid);
-            $display("|=EX Stage=| Operand A: %d | Operand B: %d | Operand D: %d | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b |",
-                OperandA_out_idexe, OperandB_out_idexe, OperandD_out_idexe, am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
-            $display("| ALU_OUT: %d | SHIFTEROUT: %d | ALUMUX: %d | ALUMUX_CTRL: %b | BL COND OUT: %b | COND_EVAL_out: %b", 
-                Alu_out, Shifter_out, NextPCORAALU_MUX_OUT,NextPCORALU_CTRL_OUT, bl_condition_out, COND_EVAL_out);
-            $display("|=MEM Stage=| RF_EN: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | Load: %b | ADDR/WB: %d | DATAMEM_OUT: %b",
+            $display("|=ID Stage=|");
+            $display("| LE_IF: %b | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | BL: %b | B: %b |",
+                IFID_LE_CTRL_OUT, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_out_cumux, branch_link_out_cumux);
+            $display("| RA: %d | RB: %d | RD: %d | INSTR_COND_IFID: %b | PA: %d | PB: %d | PD: %d |",
+                ra_ifid,rb_ifid,rd_ifid,instr_cond_ifid, Operand_A_OUT_RF, Operand_B_OUT_RF, Operand_D_OUT_RF);
+            $display("| Operand A: %d | Operand B: %d | Operand D: %d",OperandA_out_idexe, OperandB_out_idexe, OperandD_out_idexe);
+            $display("| AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b |",
+                am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
+            $display("");
+            $display("|=EXE Stage=|");
+            $display("| ALU_OUT: %d | SHIFTEROUT: %d | ALUMUX: %d | ALUMUX_CTRL: %b | BL COND OUT: %b | COND_EVAL_out: %b | B: %b | BL: %b |", 
+                Alu_out, Shifter_out, NextPCORAALU_MUX_OUT,NextPCORALU_CTRL_OUT, bl_condition_out, COND_EVAL_out, B_out_idexe, BL_out_idexe);
+            $display("| PSR_MUXOUT: %b | Alu_flags_out: %b | Flags_out_PSR: %b | INSTR_COND_IDEXE: %b ",
+                PSR_MUX_OUT[3:0], Alu_flags_out[3:0], Flags_out_PSR[3:0], instr_cond_idexe);
+            $display("");
+            $display("|=MEM Stage=|");
+            $display("| RF_EN: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | Load: %b | ADDR/WB: %d | DATAMEM_OUT: %b",
                 rf_en_out_exemem, datamem_en_out_exemem, rw_out_exemem, size_out_exemem, Load_out_exemem, AluORNextPC_out_exemem,dataMem_Out);
-            $display("|=WB Stage=| RF_EN: %b | Rd: %d | PW: %d | ", 
+            $display("");
+            $display("|=WB Stage=|");
+            $display("| RF_EN: %b | Rd: %d | PW: %d | ", 
                 rf_en_out_memwb, rd_out_memwb, dataWB_memwb);
-            $display("-----------============================================================--------------------");
-            $display("-----------============================================================--------------------");
             $display("-----------============================================================--------------------");
             // $display("-------------------------------------------------------------------------------------------");
 
@@ -223,11 +223,13 @@ module PPU();
             wire TA_Ctrl_out;
             wire bl_condition_out;
             wire COND_EVAL_out;
+            wire [31:0] monFlags;
             ConditionHandler condhandler (
-                .B_in(B_signal),
-                .BL_in(BL_signal),
+                .B_in(B_out_idexe),
+                .BL_in(BL_out_idexe),
                 .I_Cond_in(instr_cond_idexe),
                 .Flags_in(PSR_MUX_OUT),
+                .monFlags(monFlags),
 
                 .TA_Ctrl_out(TA_Ctrl_out),
                 .BL_COND_out(bl_condition_out),
@@ -413,6 +415,8 @@ module PPU();
             wire [23:0] branch_offset_ifid;
             wire [31:0] next_pc_out_ifid;
             wire [31:0] cu_in;
+
+
             if_id_reg IF_ID(
                 .clk(clk),
                 .load_enable(IFID_LE_CTRL_OUT),
@@ -421,6 +425,8 @@ module PPU();
                 //INPUTS
                 .instruction(insMem_Out),
                 .next_pc_in(PC_adder_out),
+
+
                 
                 //OUTPUTS
                 .instr_cond(instr_cond_ifid),
@@ -440,6 +446,7 @@ module PPU();
             wire rw_out_idexe;
             wire size_out_idexe;
             wire Load_out_idexe;
+
             wire [1:0] am_out_idexe;
             wire [3:0] alu_op_out_idexe;
             
@@ -449,6 +456,9 @@ module PPU();
             wire [11:0] immediate_out_idexe;
             wire [3:0] rd_out_idexe;
             wire [3:0] instr_cond_idexe;
+
+            wire B_out_idexe;
+            wire BL_out_idexe;
 
             
             id_exe_reg ID_EXE(
@@ -472,6 +482,8 @@ module PPU();
                 .immediate_in(immediate_ifid),
                 .rd_in(RF_MUX_SAVENEXTPC_OUT[3:0]),
                 .NEXTORALU_ctrl_in(bl_condition_out),
+                .B_in(branch_out_cumux),
+                .BL_in(branch_link_out_cumux),
 
                 //OUTPUTS
                 .rf_en_out(rf_en_out_idexe),
@@ -489,7 +501,9 @@ module PPU();
                 .operand_d_out(OperandD_out_idexe),
                 .immediate_out(immediate_out_idexe),
                 .rd_out(rd_out_idexe),
-                .NEXTORALU_ctrl_out(NextPCORALU_CTRL_OUT)
+                .NEXTORALU_ctrl_out(NextPCORALU_CTRL_OUT),
+                .B_out(B_out_idexe),
+                .BL_out(BL_out_idexe)
             );
         //================================================================
         //Execute Memory PPR
@@ -671,6 +685,8 @@ endmodule
             end else begin
                 OperandD_MUX_CTRL = 2'b00;
             end
+
+            //TODO: COND_EVAL Cancels instructions properly
         end
     endmodule
 
@@ -683,7 +699,8 @@ endmodule
 
         output reg TA_Ctrl_out,
         output reg BL_COND_out,
-        output reg COND_EVAL_out
+        output reg COND_EVAL_out,
+        output reg [31:0] monFlags
         );
 
         reg Z,N,C,V;
@@ -706,6 +723,8 @@ endmodule
         parameter NEVER             = 4'b1111;
 
         always @(*) begin
+            monFlags = Flags_in;
+
             Z = Flags_in[0];
             N = Flags_in[1];
             C = Flags_in[2];
@@ -736,8 +755,8 @@ endmodule
                 default:          COND_EVAL_out = 0;
             endcase
             //TODO: fix condition handler (seems related to instruction condition not arriving)
-            // TA_Ctrl_out = (B_in || BL_in) && COND_EVAL_out;
-            TA_Ctrl_out = 0;
+            TA_Ctrl_out = ((B_in || BL_in) && COND_EVAL_out);
+            // TA_Ctrl_out = 0;
             // BL_COND_out = BL_in && COND_EVAL_out;
             BL_COND_out = 0;
         end
@@ -754,12 +773,17 @@ endmodule
 
         always @(*) begin
             if (S_bit_in) begin
-            Z <= Flags_in[0];
-            N <= Flags_in[1];
-            C <= Flags_in[2];
-            V <= Flags_in[3];
+                Z = Flags_in[0];
+                N = Flags_in[1];
+                C = Flags_in[2];
+                V = Flags_in[3];
+            end else begin
+                Z = 0;
+                N = 0;
+                C = 0;
+                V = 0;
             end
-            Flags_out <= {28'b0, V,C,N,Z};
+            Flags_out = {28'b0, V, C, N, Z};
         end
     endmodule
 
@@ -1207,14 +1231,14 @@ endmodule
 
         always @ (posedge clk) begin
             if(reset) begin
-                    instr_cond <= 0;
-                    branch_offset <= 0;
-                    ra <= 0;
-                    rd <= 0;
-                    rb <= 0;
-                    immediate <= 0;
-                    next_pc_out <= 0;
-                    cu_in <= 0;
+                instr_cond <= 0;
+                branch_offset <= 0;
+                ra <= 0;
+                rd <= 0;
+                rb <= 0;
+                immediate <= 0;
+                next_pc_out <= 0;
+                cu_in <= 0;
             end else if (load_enable) begin
                 instr_cond <= instruction[31:28];
                 branch_offset <= instruction[23:0];
@@ -1239,6 +1263,8 @@ endmodule
         input [11:0] immediate_in,
         input [3:0] rd_in,
         input NEXTORALU_ctrl_in,
+        input BL_in,
+        input B_in,
 
         output reg rf_en_out, s_bit_out, datamem_en_out, readwrite_out, size_out, load_instruction_out,
         output reg [1:0] am_out,
@@ -1247,7 +1273,9 @@ endmodule
         output reg [31:0] next_pc_out, operand_a_out, operand_b_out, operand_d_out,
         output reg [11:0] immediate_out,
         output reg [3:0] rd_out,
-        output reg NEXTORALU_ctrl_out
+        output reg NEXTORALU_ctrl_out,
+        output reg BL_out,
+        output reg B_out
         );
 
         always @ (posedge clk) begin 
@@ -1268,6 +1296,8 @@ endmodule
                 immediate_out <= 0;
                 rd_out <= 0;
                 NEXTORALU_ctrl_out <= 0;
+                BL_out <= 0;
+                B_out <= 0;
                 
             end else begin
                 rf_en_out <= rf_en_in;
@@ -1286,6 +1316,8 @@ endmodule
                 immediate_out <= immediate_in;
                 rd_out <= rd_in;
                 NEXTORALU_ctrl_out <= NEXTORALU_ctrl_in;
+                BL_out <= BL_in;
+                B_out <= B_in;
             end
         end
     endmodule
