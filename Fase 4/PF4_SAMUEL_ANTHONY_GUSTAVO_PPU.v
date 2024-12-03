@@ -88,8 +88,8 @@ module PPU();
                 $time, PC_Out, instruction_name, insMem_Out);
             $display("");
             $display("--------------------------------REGISTER FILE MONITOR-------------------------------------------");
-            $display("R1 = %d | R2 = %d | R3 = %d | R5 = %d | R6 = %d | R10 = %d | R14 = %d", 
-                monQ1,monQ2,monQ3,monQ5,monQ6,monQ10,monQ14);
+            $display("R0 = %d |R1 = %d | R2 = %d | R3 = %d | R5 = %d | R6 = %d | R10 = %d | R14 = %d", 
+                monQ0,monQ1,monQ2,monQ3,monQ5,monQ6,monQ10,monQ14);
             $display("");
             $display("----------------------------------DEBUG SECTION---------------------------------------");
             $display("TA_Ctrl_out: %d | BranchMUXOUT: %d | Cond_hand_flags_internal: %b | 4xRotExtOut: %d |",
@@ -127,7 +127,7 @@ module PPU();
         end
 
         initial begin
-            #52
+            #130
             $display("-------------------------------------------------------------------------------------------");
             $display("| Address Range |                                  Values                                 |");
             $display("-------------------------------------------------------------------------------------------");
@@ -136,7 +136,7 @@ module PPU();
                     $write("| %03d - %03d     | ", i, i + 7);  // Address range
 
                     // Print values for 8 consecutive memory locations
-                    $write("%d %d %d %d %d %d %d %d", 
+                    $write("%b %b %b %b %b %b %b %b", 
                         dataMem.Mem[i], dataMem.Mem[i+1], dataMem.Mem[i+2], dataMem.Mem[i+3],
                         dataMem.Mem[i+4], dataMem.Mem[i+5], dataMem.Mem[i+6], dataMem.Mem[i+7]);
 
@@ -147,7 +147,7 @@ module PPU();
         end
 
         initial begin
-            #54;
+            #130;
             $display("");
             $display("----------Data Memory Dump---------");
             for (i = 0; i < 253; i = i + 4) begin
@@ -156,7 +156,7 @@ module PPU();
         end
 
         initial begin
-            #54 $finish; //41 so it can print out 40
+            #250 $finish; //41 so it can print out 40
         end
 
     //==================INSTANTIATION===================//
@@ -664,6 +664,9 @@ endmodule
             OperandB_MUX_CTRL = 2'b00; 
             OperandD_MUX_CTRL = 2'b00; 
 
+
+            //TODO: Create signals to Hazard Unit for Niche exceptions related to rm rn rd
+            
             // Stall if there’s a data hazard with a load instruction
             if (load_instruc_in && ((rd_in_exe == ra_in) || (rd_in_exe == rb_in))) begin
                 CU_MUX_CTRL = 1'b1;     
@@ -938,11 +941,15 @@ endmodule
             // Overflow 
             if (Op == OP_ADD || Op == OP_ADD_CIN) begin
                 // When adding 
-                V = (A[31] == B[31]) && (A[31] != Out[31]);
+                V = (A[31] == B[31]) && (A[31] != Out[31]); //MY IMPL
+
+                // V = !(A[31] ^ B[31]) && (A[31] ^ Out[31]); //PROFE IMPL
             
             end else if (Op == OP_A_SUB_B || Op == OP_A_SUB_B_CIN || Op == OP_B_SUB_A || Op == OP_B_SUB_A_CIN) begin
                 // When substracting 
-                V = (A[31] != B[31]) && (A[31] != Out[31]);
+                V = (A[31] != B[31]) && (A[31] != Out[31]); //MY IMPL
+
+                // V = (A[31] ^ B[31]) & (A[31] ^ Out[31]); //PROFE IMPL
             
             end else begin
                 V = 1'b0; // Logical operation -> No overflow
@@ -1105,7 +1112,7 @@ endmodule
                         datamem_en = !instruction[20];
                         rf_en = instruction[20]; // 1 When load, 0 when store
 
-
+                        //TODO: Create signals to Hazard Unit for Niche exceptions related to rm rn rd
                         if (I == 0) begin
                             AM = ZERO_EXTEND; // For Offset-12
                         end else begin
@@ -1214,10 +1221,10 @@ endmodule
                             0: Mem[A] <= DataIn[7:0]; //Write Byte
                             
                             1: begin                 //Write Word
-                                Mem[A] <= DataIn[7:0];   
-                                Mem[A+1] <= DataIn[15:8];
-                                Mem[A+2] <= DataIn[23:16];
-                                Mem[A+3] <= DataIn[31:24]; 
+                                Mem[A+3] <= DataIn[7:0];   
+                                Mem[A+2] <= DataIn[15:8];
+                                Mem[A+1] <= DataIn[23:16];
+                                Mem[A] <= DataIn[31:24]; 
                             end
                         endcase
                     end
