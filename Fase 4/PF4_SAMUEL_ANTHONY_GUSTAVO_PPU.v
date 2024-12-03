@@ -94,8 +94,8 @@ module PPU();
             $display("----------------------------------DEBUG SECTION---------------------------------------");
             $display("TA_Ctrl_out: %d | BranchMUXOUT: %d | Cond_hand_flags_internal: %b | 4xRotExtOut: %d |",
                     TA_Ctrl_out, BranchMux_out, monFlags[3:0], rot_ext_output );
-            $display("| PCADDER: %d | PC_LE_CTRL: %b | IFID_LE_CTRL: %b | CU_MUX_CTRL_OUT: %b |",
-            PC_adder_out,PC_LE_CTRL_OUT, IFID_LE_CTRL_OUT, CU_MUX_CTRL_OUT );
+            $display("| PCADDER: %d | PC_LE_CTRL: %b | IFID_LE_CTRL: %b | CU_MUX_CTRL_OUT: %b | RF_EN_MUX_EXE: %b |",
+            PC_adder_out,PC_LE_CTRL_OUT, IFID_LE_CTRL_OUT, CU_MUX_CTRL_OUT, branch_rf_en_mux[0]);
             $display("");
             $display("--------------------------------PIPELINE INFO----------------------------------------");
             $display("|=ID Stage=|");
@@ -612,8 +612,8 @@ module PPU();
         //MUX for RF between CU and CUMUX
             wire [31:0] branch_rf_en_mux;
             In2Out1MUX32 inbetweencucumux(
-                .In1({31'b0, rf_en_out_idexe}),
-                .In2({31'b0, 1'b1}),
+                .In1({31'b0, 1'b1}),
+                .In2({31'b0, rf_en_out_idexe}),
                 .selector(BL_COND_out),
 
                 .out(branch_rf_en_mux)
