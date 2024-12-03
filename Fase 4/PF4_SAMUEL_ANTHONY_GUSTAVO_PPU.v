@@ -88,8 +88,8 @@ module PPU();
                 $time, PC_Out, instruction_name, insMem_Out);
             $display("");
             $display("--------------------------------REGISTER FILE MONITOR-------------------------------------------");
-            $display("R1 = %d | R2 = %d | R3 = %d | R5 = %d | R6 = %d | R10 = %d", 
-                monQ1,monQ2,monQ3,monQ5,monQ6,monQ10);
+            $display("R1 = %d | R2 = %d | R3 = %d | R5 = %d | R6 = %d | R10 = %d | R14 = %d", 
+                monQ1,monQ2,monQ3,monQ5,monQ6,monQ10,monQ14);
             $display("");
             $display("----------------------------------DEBUG SECTION---------------------------------------");
             $display("TA_Ctrl_out: %d | BranchMUXOUT: %d | Cond_hand_flags_internal: %b | 4xRotExtOut: %d |",
@@ -101,15 +101,15 @@ module PPU();
             $display("|=ID Stage=|");
             $display("| Reset: %b | IFID PC (NEXTPC): %d | Instruction Name IFID: %-23s | Instruction IFID: %b",
                     TA_Ctrl_out, next_pc_out_ifid, ins_n_ifid ,cu_in);
-            $display("| LE_IF: %b | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | B: %b | BL: %b |",
-                IFID_LE_CTRL_OUT, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_cu_out, branch_link_cu_out);
+            $display("| LE_IF: %b | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | B: %b | BL: %b | TA_CONTRL_sgn: %d",
+                IFID_LE_CTRL_OUT, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_cu_out, branch_link_cu_out, TA_Ctrl_out);
             $display("| RA: %d | RB: %d | RD: %d | INSTR_COND_IFID: %b | PA: %d | PB: %d | PD: %d |",
                 ra_ifid,rb_ifid,rd_ifid,instr_cond_ifid, Operand_A_OUT_RF, Operand_B_OUT_RF, Operand_D_OUT_RF);
             $display("");
             $display("|=EXE Stage=|");
             $display("| Operand A: %d | Operand B: %d | Operand D: %d",OperandA_out_idexe, OperandB_out_idexe, OperandD_out_idexe);
-            $display("| AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b |",
-                am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe);
+            $display("| AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | RW: %d",
+                am_out_idexe, s_bit_out_idexe, datamem_en_out_idexe, rw_out_idexe, size_out_idexe, rf_en_out_idexe, alu_op_out_idexe, Load_out_idexe, rd_out_idexe);
             $display("| ALU_OUT: %d | SHIFTEROUT: %d | ALUMUX: %d | ALUMUX_CTRL: %b | BL COND OUT: %b | COND_EVAL_out: %b", 
                 Alu_out, Shifter_out, NextPCORAALU_MUX_OUT,NextPCORALU_CTRL_OUT, bl_condition_out, COND_EVAL_out);
             $display("| PSR_MUXOUT: %b | Alu_flags_out: %b | Flags_out_PSR: %b | ",
@@ -415,7 +415,7 @@ module PPU();
                 
                 //INPUTS
                 .am_in(am_cu_out),
-                .rf_en_in(inbetweenCUCUMUX_MUX_OUT[0]),
+                .rf_en_in(rf_en_cu_out),
                 .alu_op_in(alu_op_cu_out),
                 .Load_in(Load_cu_out),
                 .s_bit_in(s_bit_cu_out),
@@ -537,7 +537,7 @@ module PPU();
                 .reset(rst),
 
                 //INPUTS
-                .rf_en_in(rf_en_out_idexe),
+                .rf_en_in(branch_rf_en_mux[0]),
                 .datamem_en_in(datamem_en_out_idexe),
                 .readwrite_in(rw_out_idexe),
                 .size_in(size_out_idexe),
@@ -610,13 +610,13 @@ module PPU();
             );
         //================================================================
         //MUX for RF between CU and CUMUX
-            wire [31:0] inbetweenCUCUMUX_MUX_OUT;
+            wire [31:0] branch_rf_en_mux;
             In2Out1MUX32 inbetweencucumux(
-                .In1({31'b0, rf_en_cu_out}),
+                .In1({31'b0, rf_en_out_idexe}),
                 .In2({31'b0, 1'b1}),
-                .selector(bl_condition_out),
+                .selector(BL_COND_out),
 
-                .out(inbetweenCUCUMUX_MUX_OUT)
+                .out(branch_rf_en_mux)
             );
         //================================================================
         //Data Memory
@@ -775,10 +775,11 @@ endmodule
                     default:          COND_EVAL_out = 0;
                 endcase
                 TA_Ctrl_out = COND_EVAL_out;
+                BL_COND_out = BL_in && COND_EVAL_out;
             end
             // TA_Ctrl_out = 0;
-            // BL_COND_out = BL_in && COND_EVAL_out;
-            BL_COND_out = 0;
+            //BL_COND_out = BL_in && COND_EVAL_out;
+            //BL_COND_out = 0;
         end
     endmodule
     
