@@ -94,15 +94,15 @@ module PPU();
             $display("----------------------------------DEBUG SECTION---------------------------------------");
             $display("TA_Ctrl_out: %d | BranchMUXOUT: %d | Cond_hand_flags_internal: %b | 4xRotExtOut: %d |",
                     TA_Ctrl_out, BranchMux_out, monFlags[3:0], rot_ext_output );
-            $display("| PCADDER: %d | PC_LE_CTRL: %b | IFID_LE_CTRL: %b | CU_MUX_CTRL_OUT: %b | RF_EN_MUX_EXE: %b |",
-            PC_adder_out,PC_LE_CTRL_OUT, IFID_LE_CTRL_OUT, CU_MUX_CTRL_OUT, branch_rf_en_mux[0]);
+            $display("| PCADDER: %d | PC_LE_CTRL: %b | IFID_LE_CTRL: %b | CU_MUX_CTRL_OUT: %b | RF_EN_MUX_BETW: %b | RF_EN_CU_OUT: %b | RF_EN_CUMUXOUT: %b |",
+            PC_adder_out,PC_LE_CTRL_OUT, IFID_LE_CTRL_OUT, CU_MUX_CTRL_OUT, branch_rf_en_mux[0],rf_en_cu_out,rf_en_out_cumux );
             $display("");
             $display("--------------------------------PIPELINE INFO----------------------------------------");
             $display("|=ID Stage=|");
             $display("| Reset: %b | IFID PC (NEXTPC): %d | Instruction Name IFID: %-23s | Instruction IFID: %b",
                     TA_Ctrl_out, next_pc_out_ifid, ins_n_ifid ,cu_in);
-            $display("| LE_IF: %b | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | RF_EN: %b | ALU_OP: %b | Load: %b | B: %b | BL: %b | TA_CONTRL_sgn: %d",
-                IFID_LE_CTRL_OUT, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, rf_en_cu_out, alu_op_cu_out, Load_cu_out, branch_cu_out, branch_link_cu_out, TA_Ctrl_out);
+            $display("| LE_IF: %b | AM: %b | S-Bit: %b | DATAMEM_EN: %b | R/W: %b | Size: %b | ALU_OP: %b | Load: %b | B: %b | BL: %b | TA_CONTRL_sgn: %d",
+                IFID_LE_CTRL_OUT, am_cu_out, s_bit_cu_out, datamem_en_cu_out, rw_cu_out, size_cu_out, alu_op_cu_out, Load_cu_out, branch_cu_out, branch_link_cu_out, TA_Ctrl_out);
             $display("| RA: %d | RB: %d | RD: %d | INSTR_COND_IFID: %b | PA: %d | PB: %d | PD: %d |",
                 ra_ifid,rb_ifid,rd_ifid,instr_cond_ifid, Operand_A_OUT_RF, Operand_B_OUT_RF, Operand_D_OUT_RF);
             $display("");
@@ -415,7 +415,7 @@ module PPU();
                 
                 //INPUTS
                 .am_in(am_cu_out),
-                .rf_en_in(rf_en_cu_out),
+                .rf_en_in(branch_rf_en_mux[0]),
                 .alu_op_in(alu_op_cu_out),
                 .Load_in(Load_cu_out),
                 .s_bit_in(s_bit_cu_out),
@@ -537,7 +537,7 @@ module PPU();
                 .reset(rst),
 
                 //INPUTS
-                .rf_en_in(branch_rf_en_mux[0]),
+                .rf_en_in(rf_en_out_idexe),
                 .datamem_en_in(datamem_en_out_idexe),
                 .readwrite_in(rw_out_idexe),
                 .size_in(size_out_idexe),
@@ -612,7 +612,7 @@ module PPU();
         //MUX for RF between CU and CUMUX
             wire [31:0] branch_rf_en_mux;
             In2Out1MUX32 inbetweencucumux(
-                .In1({31'b0, rf_en_out_idexe}),
+                .In1({31'b0, rf_en_cu_out}),
                 .In2({31'b0, 1'b1}),
                 .selector(bl_condition_out),
 
@@ -673,7 +673,7 @@ endmodule
             else if (COND_EVAL_in) begin
                 PC_LE_CTRL = 1'b1;
                 IFID_LE_CTRL = 1'b0;
-                CU_MUX_CTRL = 1'b1;
+                CU_MUX_CTRL = 1'b0;
             end
             // Forwarding logic for OperandA
             if (rf_en_exe && (rd_in_exe == ra_in)) begin
