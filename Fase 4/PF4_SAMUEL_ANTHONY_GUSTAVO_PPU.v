@@ -612,9 +612,9 @@ module PPU();
         //MUX for RF between CU and CUMUX
             wire [31:0] branch_rf_en_mux;
             In2Out1MUX32 inbetweencucumux(
-                .In1({31'b0, 1'b1}),
-                .In2({31'b0, rf_en_out_idexe}),
-                .selector(BL_COND_out),
+                .In1({31'b0, rf_en_out_idexe}),
+                .In2({31'b0, 1'b1}),
+                .selector(bl_condition_out),
 
                 .out(branch_rf_en_mux)
             );
